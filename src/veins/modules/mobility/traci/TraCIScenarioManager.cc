@@ -327,6 +327,18 @@ void TraCIScenarioManager::init_traci()
         ASSERT(buf.eof());
     }
 
+    {
+        // subscribe to list of vehicle ids
+        simtime_t beginTime = 0;
+        simtime_t endTime = SimTime::getMaxTime();
+        std::string objectId = "";
+        uint8_t variableNumber = 1;
+        uint8_t variable1 = ID_LIST;
+        TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+        processSubcriptionResult(buf);
+        ASSERT(buf.eof());
+    }
+
     if (!trafficLightModuleType.empty() && !trafficLightModuleIds.empty()) {
         // initialize traffic lights
         cModule* parentmod = getParentModule();
