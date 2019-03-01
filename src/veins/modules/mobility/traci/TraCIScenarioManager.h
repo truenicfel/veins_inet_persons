@@ -139,6 +139,12 @@ protected:
     cMessage* connectAndStartTrigger; /**< self-message scheduled for when to connect to TraCI server and start running */
     cMessage* executeOneTimestepTrigger; /**< self-message scheduled for when to next call executeOneTimestep */
 
+    /**
+     * All persons we have already subscribed to.
+     */
+    std::set<std::string> subscribedPersons;
+    uint32_t activePersonCount;
+
     BaseWorldUtility* world;
     std::map<const TraCIMobility*, const VehicleObstacle*> vehicleObstacles;
     VehicleObstacleControl* vehicleObstacleControl;
@@ -155,15 +161,81 @@ protected:
 
     bool isModuleUnequipped(std::string nodeId); /**< returns true if this vehicle is Unequipped */
 
-    void subscribeToVehicleVariables(std::string vehicleId);
-    void unsubscribeFromVehicleVariables(std::string vehicleId);
-    void processSimSubscription(std::string objectId, TraCIBuffer& buf);
-    void processVehicleSubscription(std::string objectId, TraCIBuffer& buf);
     void processSubcriptionResult(TraCIBuffer& buf);
 
+    /*
+     * Vehicle variable subscription handling:
+     */
+    void subscribeToVehicleVariables(std::string vehicleId);
+    void unsubscribeFromVehicleVariables(std::string vehicleId);
+    void processVehicleSubscription(std::string objectId, TraCIBuffer& buf);
+
+    /*
+     * Simulation subscription handling:
+     */
+    void processSimSubscription(std::string objectId, TraCIBuffer& buf);
+
+    /*
+     * Traffic light subscription handling:
+     */
     void subscribeToTrafficLightVariables(std::string tlId);
     void unsubscribeFromTrafficLightVariables(std::string tlId);
     void processTrafficLightSubscription(std::string objectId, TraCIBuffer& buf);
+
+    /*
+     * Person variable subscription handling:
+     */
+    /**
+     * Subscribes to the following person variables of the given person:
+     *  - position (0x42)
+     *  - speed (0x40)
+     *  - angle (0x43)
+     *  - road id (0x50)
+     * (see https://sumo.dlr.de/wiki/TraCI/Person_Value_Retrieval)
+     *
+     * Note: This should be called when a person enters the simulation.
+     *
+     * @param personID string representation of the person identification.
+     */
+    void subscribeToPersonVariables(std::string personID);
+
+    /**
+     * Unsubscribes from the following person variables of the given person:
+     *  - position (0x42)
+     *  - speed (0x40)
+     *  - angle (0x43)
+     *  - road id (0x50)
+     * (see https://sumo.dlr.de/wiki/TraCI/Person_Value_Retrieval)
+     *
+     * Note: This should be called when a person leaves the simulation.
+     *
+     * @param personID string representation of the person identification.
+     */
+    void unsubscribeFromPersonVariables(std::string personID);
+
+    /**
+     * Processes the result of a person subscription given in buf param. It
+     * will make sure that:
+     *  - new persons entering the simulation will be subscribed to
+     *  - persons leaving the simulation will be unsubscribed from
+     *  - persons that got an position update will have its position updated
+     *  in omnetpp
+     *
+     * @param objectID The objectID this subscription belongs to.
+     * @param buf the traci buffer containing the subscriptions.
+     */
+    void processPersonSubscription(std::string objectId, TraCIBuffer& buf);
+
+    /**
+     * Helper method for processPersonSubscription which will handle making
+     * sure that persons entering the simulation are added and persons leaving
+     * the simulation are removed.
+     *
+     * @param varType This should be TYPE_STRINGLIST (will be checked)
+     * @param buf the traci buffer containing the string list.
+     */
+    void processPersonIDListSubscription(uint8_t varType, TraCIBuffer& buf);
+
     /**
      * parses the vector of module types in ini file
      *

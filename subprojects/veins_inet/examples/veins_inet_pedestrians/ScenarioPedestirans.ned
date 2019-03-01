@@ -24,7 +24,7 @@ import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 import org.car2x.veins.subprojects.veins_inet.VeinsInetCar;
 import org.car2x.veins.subprojects.veins_inet.VeinsInetManager;
 
-network Scenario
+network ScenarioPedestrians
 {
     submodules:
         radioMedium: Ieee80211ScalarRadioMedium;

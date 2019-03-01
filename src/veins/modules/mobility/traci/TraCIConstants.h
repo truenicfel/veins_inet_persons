@@ -265,7 +265,10 @@ const uint8_t CMD_SUBSCRIBE_LANEAREA_VARIABLE = 0xdd;
 // response: subscribe areal detector (e2) variable
 const uint8_t RESPONSE_SUBSCRIBE_LANEAREA_VARIABLE = 0xed;
 
+// command: subscribe person context
 const uint8_t CMD_SUBSCRIBE_PERSON_VARIABLE = 0xde;
+// response: subscribe person variable
+const uint8_t RESPONSE_SUBSCRIBE_PERSON_VARIABLE = 0xee;
 
 // ****************************************
 // POSITION REPRESENTATIONS

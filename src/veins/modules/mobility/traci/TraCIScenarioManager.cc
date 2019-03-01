@@ -54,6 +54,10 @@ TraCIScenarioManager::TraCIScenarioManager()
     , connectAndStartTrigger(nullptr)
     , executeOneTimestepTrigger(nullptr)
     , world(nullptr)
+    , subscribedVehicles()
+    , activeVehicleCount(0)
+    , subscribedPersons()
+    , activePersonCount(0)
 {
 }
 
@@ -262,6 +266,7 @@ void TraCIScenarioManager::initialize(int stage)
     hosts.clear();
     subscribedVehicles.clear();
     trafficLights.clear();
+    subscribedPersons.clear();
     activeVehicleCount = 0;
     parkingVehicleCount = 0;
     drivingVehicleCount = 0;
@@ -328,7 +333,7 @@ void TraCIScenarioManager::init_traci()
     }
 
     {
-        // subscribe to list of vehicle ids
+        // subscribe to list of person ids
         simtime_t beginTime = 0;
         simtime_t endTime = SimTime::getMaxTime();
         std::string objectId = "";
@@ -1074,6 +1079,228 @@ void TraCIScenarioManager::processVehicleSubscription(std::string objectId, TraC
         updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(signals));
     }
 }
+void TraCIScenarioManager::subscribeToPersonVariables(std::string personID) {
+    EV_DEBUG << "hello im subscribing to person variables" << endl;
+}
+
+void TraCIScenarioManager::unsubscribeFromPersonVariables(std::string personID) {
+    EV_DEBUG << "hello im unsubscribing from person variables" << endl;
+}
+void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCIBuffer& buf) {
+
+    // result variables for person position updates
+    double px;
+    double py;
+    std::string edge;
+    double speed;
+    double angle_traci;
+
+    // we have to read all of these to be able to update a position
+    bool positionRead = false;
+    bool roadIDRead = false;
+    bool speedRead = false;
+    bool angleRead = false;
+
+
+    uint8_t numberOfResponseVariables;
+    buf >> numberOfResponseVariables;
+    for (uint8_t counter = 0; counter < numberOfResponseVariables; ++counter) {
+        // extract a couple of variables from the response:
+        // - identifies the variable (position, list etc.)
+        uint8_t responseVariableID;
+        buf >> responseVariableID;
+        // - status of the variable
+        uint8_t variableStatus;
+        buf >> variableStatus;
+        // - type of the variable
+        uint8_t varType;
+        buf >> varType;
+
+        if (variableStatus == RTYPE_OK) {
+            // the status of the variable is ok
+
+            // now check which variable id we got and adapt behaviour
+            if (responseVariableID == ID_LIST) {
+                // helper method takes care of this
+                processPersonIDListSubscription(varType, buf);
+            }
+            else if (responseVariableID == VAR_POSITION) {
+                ASSERT(varType == POSITION_2D);
+                buf >> px;
+                buf >> py;
+                positionRead = true;
+            }
+            else if (responseVariableID == VAR_ROAD_ID) {
+                ASSERT(varType == TYPE_STRING);
+                buf >> edge;
+                roadIDRead = true;
+            }
+            else if (responseVariableID == VAR_SPEED) {
+                ASSERT(varType == TYPE_DOUBLE);
+                buf >> speed;
+                speedRead = true;
+            }
+            else if (responseVariableID == VAR_ANGLE) {
+                ASSERT(varType == TYPE_DOUBLE);
+                buf >> angle_traci;
+                angleRead = true;
+            }
+
+        } else {
+            // the status of the variable is not ok
+            ASSERT(varType == TYPE_STRING);
+            std::string errormsg;
+            buf >> errormsg;
+            if (subscribedPersons.find(objectId) != subscribedPersons.end()) {
+                if (variableStatus == RTYPE_NOTIMPLEMENTED) {
+                    error(
+                            "TraCI server reported subscribing to vehicle variable 0x%2x not implemented (\"%s\"). Might need newer version.",
+                            responseVariableID, errormsg.c_str());
+                }
+
+                error(
+                        "TraCI server reported error subscribing to vehicle variable 0x%2x (\"%s\").",
+                        responseVariableID, errormsg.c_str());
+            }
+        }
+
+    }
+
+    // check for incomplete subscription response
+    // TODO: is this correct?
+    if (positionRead ^ roadIDRead ^ speedRead ^ angleRead) {
+        error("Received incomplete number of subscribed values. Subscribed to 4 but got 1, 2 or 3.");
+    }
+    else {
+
+        // convert traci values to omnet values...
+        Coord p = connection->traci2omnet(TraCICoord(px, py));
+        if ((p.x < 0) || (p.y < 0)) error("received bad node position (%.2f, %.2f), translated to (%.2f, %.2f)", px, py, p.x, p.y);
+
+        Heading heading = connection->traci2omnetHeading(angle_traci);
+
+        cModule* mod = getManagedModule(objectId);
+
+        // is it in the ROI?
+        // TODO: find out what exactly unequipped hosts are
+        bool inRoi = !roi.hasConstraints() ? true : (roi.onAnyRectangle(TraCICoord(px, py)) || roi.partOfRoads(edge));
+        if (!inRoi) {
+            if (mod) {
+                deleteManagedModule(objectId);
+                EV_DEBUG << "Person #" << objectId << " left region of interest" << endl;
+            }
+            else if (unEquippedHosts.find(objectId) != unEquippedHosts.end()) {
+                unEquippedHosts.erase(objectId);
+                EV_DEBUG << "Person (unequipped) # " << objectId << " left region of interest" << endl;
+            }
+            return;
+        }
+
+        if (isModuleUnequipped(objectId)) {
+            return;
+        }
+
+        if (!mod) {
+            // no such module - need to create
+            std::string vType = commandIfc->vehicle(objectId).getTypeId();
+            std::string mType, mName, mDisplayString;
+            TypeMapping::iterator iType, iName, iDisplayString;
+
+            TypeMapping::iterator i;
+            iType = moduleType.find(vType);
+            if (iType == moduleType.end()) {
+                iType = moduleType.find("*");
+                if (iType == moduleType.end())
+                    throw cRuntimeError(
+                            "cannot find a module type for vehicle type \"%s\"",
+                            vType.c_str());
+            }
+            mType = iType->second;
+            // search for module name
+            iName = moduleName.find(vType);
+            if (iName == moduleName.end()) {
+                iName = moduleName.find(std::string("*"));
+                if (iName == moduleName.end())
+                    throw cRuntimeError(
+                            "cannot find a module name for vehicle type \"%s\"",
+                            vType.c_str());
+            }
+            mName = iName->second;
+            if (moduleDisplayString.size() != 0) {
+                iDisplayString = moduleDisplayString.find(vType);
+                if (iDisplayString == moduleDisplayString.end()) {
+                    iDisplayString = moduleDisplayString.find("*");
+                    if (iDisplayString == moduleDisplayString.end())
+                        throw cRuntimeError(
+                                "cannot find a module display string for vehicle type \"%s\"",
+                                vType.c_str());
+                }
+                mDisplayString = iDisplayString->second;
+            } else {
+                mDisplayString = "";
+            }
+
+            if (mType != "0") {
+                // TODO: need addModule method which is compatible with pedestrians or add the missing params to subscription
+                //addModule(objectId, mType, mName, mDisplayString, p, edge, speed, heading, VehicleSignalSet(signals), length, height, width);
+                EV_DEBUG << "Added person #" << objectId << endl;
+            }
+        } else {
+            // module existed - update position
+            EV_DEBUG << "module " << objectId << " moving to " << p.x << ","
+                            << p.y << endl;
+            // TODO: need updateMOdulePosition method which is compatible with pedestrians or add the missing params to subscription
+            //updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(signals));
+        }
+
+    }
+
+
+
+}
+
+void TraCIScenarioManager::processPersonIDListSubscription(uint8_t varType, TraCIBuffer& buf) {
+
+    // first assert that the type is correct
+    ASSERT(varType == TYPE_STRINGLIST);
+    uint32_t numberOfActivePersons;
+    buf >> numberOfActivePersons;
+    EV_DEBUG << "TraCI reports " << numberOfActivePersons << " active persons." << endl;
+    ASSERT(numberOfActivePersons == activeVehicleCount);
+
+    // add all id strings of reported active persons to a set
+    std::set<std::string> activePersons;
+    for (uint32_t counter = 0; counter < numberOfActivePersons; ++counter) {
+        std::string idstring;
+        buf >> idstring;
+        activePersons.insert(idstring);
+    }
+
+    // check for vehicles that need subscribing to
+    std::set<std::string> needSubscribe;
+    // basically: activePersons - subscribedPersons
+    // --> result is a list of persons that need to be subscribed
+    std::set_difference(activePersons.begin(), activePersons.end(),
+            subscribedPersons.begin(), subscribedPersons.end(),
+            std::inserter(needSubscribe, needSubscribe.begin()));
+    for (auto iterator = needSubscribe.begin(); iterator != needSubscribe.end(); ++iterator) {
+        subscribedPersons.insert(*iterator);
+        subscribeToPersonVariables(*iterator);
+    }
+
+    // check for vehicles that need unsubscribing from
+    std::set<std::string> needUnsubscribe;
+    // basically: subscribedPersons - activePersons
+    // --> result is a list of persons that need to be unsubscribed
+    std::set_difference(subscribedPersons.begin(), subscribedPersons.end(),
+            activePersons.begin(), activePersons.end(),
+            std::inserter(needUnsubscribe, needUnsubscribe.begin()));
+    for (auto iterator = needUnsubscribe.begin(); iterator != needUnsubscribe.end(); ++iterator) {
+        subscribedPersons.erase(*iterator);
+        unsubscribeFromPersonVariables(*iterator);
+    }
+
+}
 
 void TraCIScenarioManager::processSubcriptionResult(TraCIBuffer& buf)
 {
@@ -1092,6 +1319,8 @@ void TraCIScenarioManager::processSubcriptionResult(TraCIBuffer& buf)
         processSimSubscription(objectId_resp, buf);
     else if (commandId_resp == RESPONSE_SUBSCRIBE_TL_VARIABLE)
         processTrafficLightSubscription(objectId_resp, buf);
+    else if (commandId_resp == 0xee)
+        processPersonSubscription(objectId_resp, buf);
     else {
         error("Received unhandled subscription result");
     }
