@@ -258,6 +258,22 @@ public:
          */
         std::string getTypeId();
 
+        /**
+         * Get count of persons.
+         *
+         * @return int: Returns the number of persons currently running
+         * within the scenario (the given person ID is ignored)
+         */
+        int getCount();
+
+        /**
+         * Get id list of active persons.
+         *
+         * @return std::list<std::string>: Returns a list of ids of all persons
+         * currently running within the scenario (the given person ID is ignored).
+         */
+        std::list<std::string> getIdList();
+
     protected:
         TraCICommandInterface* traci;
         TraCIConnection* connection;
