@@ -22,6 +22,7 @@ package org.car2x.veins.subprojects.veins_inet.example;
 
 import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 import org.car2x.veins.subprojects.veins_inet.VeinsInetCar;
+import org.car2x.veins.subprojects.veins_inet.VeinsInetPerson;
 import org.car2x.veins.subprojects.veins_inet.VeinsInetManager;
 
 network ScenarioPedestrians
@@ -29,5 +30,6 @@ network ScenarioPedestrians
     submodules:
         radioMedium: Ieee80211ScalarRadioMedium;
         manager: VeinsInetManager;
-        node[0]: VeinsInetCar;
+        carNode[0]: VeinsInetCar;
+        personNode[0]: VeinsInetPerson;
 }
