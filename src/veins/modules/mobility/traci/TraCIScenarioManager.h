@@ -39,6 +39,8 @@
 #include "veins/modules/mobility/traci/TraCICoord.h"
 #include "veins/modules/mobility/traci/VehicleSignal.h"
 #include "veins/modules/mobility/traci/TraCIRegionOfInterest.h"
+#include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
+
 
 namespace Veins {
 
@@ -148,6 +150,8 @@ protected:
     BaseWorldUtility* world;
     std::map<const TraCIMobility*, const VehicleObstacle*> vehicleObstacles;
     VehicleObstacleControl* vehicleObstacleControl;
+
+    PersonSubscriptionManager personSubscriptionManager;
 
     void executeOneTimestep(); /**< read and execute all commands for the next timestep */
 

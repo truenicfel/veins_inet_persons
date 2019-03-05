@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <iterator>
+#include <list>
 
 #include "veins/modules/mobility/traci/TraCIScenarioManager.h"
 #include "veins/base/connectionManager/ChannelAccess.h"
@@ -58,6 +59,7 @@ TraCIScenarioManager::TraCIScenarioManager()
     , activeVehicleCount(0)
     , subscribedPersons()
     , activePersonCount(0)
+    , personSubscriptionManager()
 {
 }
 
@@ -471,8 +473,10 @@ void TraCIScenarioManager::handleSelfMsg(cMessage* msg)
     error("TraCIScenarioManager received unknown self-message");
 }
 
-void TraCIScenarioManager::preInitializeModule(cModule* mod, const std::string& nodeId, const Coord& position, const std::string& road_id, double speed, Heading heading, VehicleSignalSet signals)
-{
+void TraCIScenarioManager::preInitializeModule(cModule* mod,
+        const std::string& nodeId, const Coord& position,
+        const std::string& road_id, double speed, Heading heading,
+        VehicleSignalSet signals) {
     // pre-initialize TraCIMobility
     auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
     for (auto mm : mobilityModules) {
@@ -490,8 +494,10 @@ void TraCIScenarioManager::updateModulePosition(cModule* mod, const Coord& p, co
 }
 
 // name: host;Car;i=vehicle.gif
-void TraCIScenarioManager::addModule(std::string nodeId, std::string type, std::string name, std::string displayString, const Coord& position, std::string road_id, double speed, Heading heading, VehicleSignalSet signals, double length, double height, double width)
-{
+void TraCIScenarioManager::addModule(std::string nodeId, std::string type,
+        std::string name, std::string displayString, const Coord& position,
+        std::string road_id, double speed, Heading heading,
+        VehicleSignalSet signals, double length, double height, double width) {
 
     if (hosts.find(nodeId) != hosts.end()) error("tried adding duplicate module");
 
@@ -592,6 +598,22 @@ void TraCIScenarioManager::executeOneTimestep()
     simtime_t targetTime = simTime();
 
     emit(traciTimestepBeginSignal, targetTime);
+
+    Veins::TraCICommandInterface::Person defaultPerson = commandIfc->person("");
+    std::list<std::string> idList = defaultPerson.getIdList();
+
+    EV_DEBUG << "There are " << idList.size() << " persons." << std::endl;
+
+    personSubscriptionManager.update(idList);
+    for (auto person: personSubscriptionManager.getNewPersons()) {
+            subscribedPersons.insert(person);
+            subscribeToPersonVariables(person);
+    }
+
+    for (auto person : personSubscriptionManager.getDisappearedPersons()) {
+        subscribedPersons.erase(person);
+        unsubscribeFromPersonVariables(person);
+    }
 
     if (isConnected()) {
         TraCIBuffer buf = connection->query(CMD_SIMSTEP2, TraCIBuffer() << targetTime);
@@ -1076,6 +1098,7 @@ void TraCIScenarioManager::processVehicleSubscription(std::string objectId, TraC
     else {
         // module existed - update position
         EV_DEBUG << "module " << objectId << " moving to " << p.x << "," << p.y << endl;
+        // we will simply set this to undefined because pedestrians do not have signals
         updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(signals));
     }
 }
@@ -1088,6 +1111,8 @@ void TraCIScenarioManager::unsubscribeFromPersonVariables(std::string personID) 
 }
 void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCIBuffer& buf) {
 
+    bool isSubscribed = (subscribedPersons.find(objectId) != subscribedPersons.end());
+
     // result variables for person position updates
     double px;
     double py;
@@ -1095,12 +1120,10 @@ void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCI
     double speed;
     double angle_traci;
 
-    // we have to read all of these to be able to update a position
-    bool positionRead = false;
-    bool roadIDRead = false;
-    bool speedRead = false;
-    bool angleRead = false;
-
+    // number of variables that need to be read to update pedestrian information
+    // (this does not include ID_LIST subscriptions)
+    static int NECESSARY_NUMBER_OF_VARIABLES = 4;
+    int numberOfReadVariables = 0;
 
     uint8_t numberOfResponseVariables;
     buf >> numberOfResponseVariables;
@@ -1124,26 +1147,27 @@ void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCI
                 // helper method takes care of this
                 processPersonIDListSubscription(varType, buf);
             }
+
             else if (responseVariableID == VAR_POSITION) {
                 ASSERT(varType == POSITION_2D);
                 buf >> px;
                 buf >> py;
-                positionRead = true;
+                numberOfReadVariables++;
             }
             else if (responseVariableID == VAR_ROAD_ID) {
                 ASSERT(varType == TYPE_STRING);
                 buf >> edge;
-                roadIDRead = true;
+                numberOfReadVariables++;
             }
             else if (responseVariableID == VAR_SPEED) {
                 ASSERT(varType == TYPE_DOUBLE);
                 buf >> speed;
-                speedRead = true;
+                numberOfReadVariables++;
             }
             else if (responseVariableID == VAR_ANGLE) {
                 ASSERT(varType == TYPE_DOUBLE);
                 buf >> angle_traci;
-                angleRead = true;
+                numberOfReadVariables++;
             }
 
         } else {
@@ -1167,11 +1191,10 @@ void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCI
     }
 
     // check for incomplete subscription response
-    // TODO: is this correct?
-    if (positionRead ^ roadIDRead ^ speedRead ^ angleRead) {
+    if ((numberOfReadVariables < NECESSARY_NUMBER_OF_VARIABLES) && (numberOfReadVariables > 0)) {
         error("Received incomplete number of subscribed values. Subscribed to 4 but got 1, 2 or 3.");
     }
-    else {
+    else if (isSubscribed) {
 
         // convert traci values to omnet values...
         Coord p = connection->traci2omnet(TraCICoord(px, py));
@@ -1202,7 +1225,7 @@ void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCI
 
         if (!mod) {
             // no such module - need to create
-            std::string vType = commandIfc->vehicle(objectId).getTypeId();
+            std::string vType = commandIfc->person(objectId).getTypeId();
             std::string mType, mName, mDisplayString;
             TypeMapping::iterator iType, iName, iDisplayString;
 
@@ -1241,16 +1264,14 @@ void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCI
             }
 
             if (mType != "0") {
-                // TODO: need addModule method which is compatible with pedestrians or add the missing params to subscription
-                //addModule(objectId, mType, mName, mDisplayString, p, edge, speed, heading, VehicleSignalSet(signals), length, height, width);
+                addModule(objectId, mType, mName, mDisplayString, p, edge, speed, heading);
                 EV_DEBUG << "Added person #" << objectId << endl;
             }
         } else {
             // module existed - update position
             EV_DEBUG << "module " << objectId << " moving to " << p.x << ","
                             << p.y << endl;
-            // TODO: need updateMOdulePosition method which is compatible with pedestrians or add the missing params to subscription
-            //updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(signals));
+            updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(VehicleSignal::undefined));
         }
 
     }
@@ -1266,7 +1287,7 @@ void TraCIScenarioManager::processPersonIDListSubscription(uint8_t varType, TraC
     uint32_t numberOfActivePersons;
     buf >> numberOfActivePersons;
     EV_DEBUG << "TraCI reports " << numberOfActivePersons << " active persons." << endl;
-    ASSERT(numberOfActivePersons == activeVehicleCount);
+    ASSERT(numberOfActivePersons == activePersonCount);
 
     // add all id strings of reported active persons to a set
     std::set<std::string> activePersons;
@@ -1284,8 +1305,8 @@ void TraCIScenarioManager::processPersonIDListSubscription(uint8_t varType, TraC
             subscribedPersons.begin(), subscribedPersons.end(),
             std::inserter(needSubscribe, needSubscribe.begin()));
     for (auto iterator = needSubscribe.begin(); iterator != needSubscribe.end(); ++iterator) {
-        subscribedPersons.insert(*iterator);
-        subscribeToPersonVariables(*iterator);
+        //subscribedPersons.insert(*iterator);
+        //subscribeToPersonVariables(*iterator);
     }
 
     // check for vehicles that need unsubscribing from
@@ -1296,8 +1317,8 @@ void TraCIScenarioManager::processPersonIDListSubscription(uint8_t varType, TraC
             activePersons.begin(), activePersons.end(),
             std::inserter(needUnsubscribe, needUnsubscribe.begin()));
     for (auto iterator = needUnsubscribe.begin(); iterator != needUnsubscribe.end(); ++iterator) {
-        subscribedPersons.erase(*iterator);
-        unsubscribeFromPersonVariables(*iterator);
+        //subscribedPersons.erase(*iterator);
+        //unsubscribeFromPersonVariables(*iterator);
     }
 
 }
