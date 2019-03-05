@@ -1102,12 +1102,32 @@ void TraCIScenarioManager::processVehicleSubscription(std::string objectId, TraC
         updateModulePosition(mod, p, edge, speed, heading, VehicleSignalSet(signals));
     }
 }
+
 void TraCIScenarioManager::subscribeToPersonVariables(std::string personID) {
-    EV_DEBUG << "hello im subscribing to person variables" << endl;
+    // subscribe to some attributes of the person
+    simtime_t beginTime = 0;
+    simtime_t endTime = SimTime::getMaxTime();
+    std::string objectId = personID;
+    uint8_t variableNumber = 4;
+    uint8_t variable1 = VAR_POSITION;
+    uint8_t variable2 = VAR_ROAD_ID;
+    uint8_t variable3 = VAR_SPEED;
+    uint8_t variable4 = VAR_ANGLE;
+
+    TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4);
+    processSubcriptionResult(buf);
+    ASSERT(buf.eof());
 }
 
 void TraCIScenarioManager::unsubscribeFromPersonVariables(std::string personID) {
-    EV_DEBUG << "hello im unsubscribing from person variables" << endl;
+    // unsubscribe by subscribing to 0 vehicle variables
+    simtime_t beginTime = 0;
+    simtime_t endTime = SimTime::getMaxTime();
+    std::string objectId = personID;
+    uint8_t variableNumber = 0;
+
+    TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber);
+    ASSERT(buf.eof());
 }
 void TraCIScenarioManager::processPersonSubscription(std::string objectId, TraCIBuffer& buf) {
 
