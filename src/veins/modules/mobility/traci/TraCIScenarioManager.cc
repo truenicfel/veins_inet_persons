@@ -608,11 +608,15 @@ void TraCIScenarioManager::executeOneTimestep()
     for (auto person: personSubscriptionManager.getNewPersons()) {
             subscribedPersons.insert(person);
             subscribeToPersonVariables(person);
+            EV_DEBUG << "Subscribed to person with id " << person << std::endl;
     }
 
     for (auto person : personSubscriptionManager.getDisappearedPersons()) {
         subscribedPersons.erase(person);
-        unsubscribeFromPersonVariables(person);
+        // check if this object has been deleted already (e.g. because it was outside the ROI)
+        cModule* mod = getManagedModule(person);
+        if (mod) deleteManagedModule(person);
+        EV_DEBUG << "Unsubscribed to person with id " << person << std::endl;
     }
 
     if (isConnected()) {

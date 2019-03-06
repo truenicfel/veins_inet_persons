@@ -37,8 +37,6 @@ void PersonSubscriptionManager::update(std::list<std::string> currentlyActivePer
         currentlyActivePersons.insert(personID);
     }
 
-    // TODO: there is an error here with these differences
-
     // check for new persons
     std::set<std::string> newPersons;
     // basically: currentlyActivePersons - mActivePersons
