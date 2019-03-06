@@ -3,9 +3,9 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="square.net.xml"/>
-        <route-files value="square.rou.xml"/>
-        <additional-files value="square.poly.xml"/>
+        <net-file value="hochschule_muenchen.net.xml"/>
+        <route-files value="hochschule_muenchen.pedestrians.rou.xml"/>
+        <additional-files value="hochschule_muenchen.poly.xml"/>
     </input>
 
     <time>
@@ -17,8 +17,5 @@
         <xml-validation.net value="never"/>
     </report>
 
-    <gui_only>
-        <start value="true"/>
-    </gui_only>
 
 </configuration>
