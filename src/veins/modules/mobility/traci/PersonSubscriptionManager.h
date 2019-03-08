@@ -25,6 +25,10 @@
 #include <string>
 #include <list>
 
+#include "veins/modules/mobility/traci/TraCIPerson.h"
+#include "veins/modules/mobility/traci/TraCIConnection.h"
+#include "veins/modules/mobility/traci/TraCICommandInterface.h"
+
 class PersonSubscriptionManager {
 public:
     /**
@@ -39,56 +43,84 @@ public:
 
     /**
      * Update this PersonSubscriptionManager with the given
-     * active person id list.
-     *
-     * Note: This is a list here because that is what is offered
-     * by the traci command interface as return value.
+     * active person id list. You can force an update of active
+     * persons using this.
      *
      * @param currentlyActivePersonIds A list containing the currently active persons
      * identified by their ids.
      */
-    void update(std::list<std::string> currentlyActivePersonIds);
+    void update(std::list<std::string>& currentlyActivePersonIds);
 
     /**
-     * This gives you all the new persons that appeared when you
-     * called update() the last time.
+     * Update this manager with the given buffer containing a subscription
+     * response for a person value.
      *
-     * @return std::set<std::string> a set of person ids.
+     * This will create new subscriptions for specific persons if the buffer
+     * contained an ID_LIST subscription.
+     *
+     * @param buffer the traci buffer containing the subscription response.
+     *
+     * @return bool true if the given buffer contained an ID_LIST response.
      */
-    std::set<std::string> getNewPersons();
+    bool update(TraCIBuffer& buffer);
 
     /**
-     * This gives you all the disappeared persons when you
-     * called update() the last time.
+     * This gives you all the persons that were updated (includes
+     * new persons) since the last time you called this method. That
+     * means that multiple calls to this method will NOT yield the same
+     * result.
+     *
+     * This can also contain multiple updates for a single person.
+     *
+     * @return a list of TraCIPerson.
+     */
+    std::list<TraCIPerson> getUpdated();
+
+    /**
+     * This gives you all the disappeared persons since you called
+     * this method the last time. That means that multiple calls
+     * to this method will yield different results.
      *
      * @return std::set<std::string> a set of person ids.
      */
     std::set<std::string> getDisappearedPersons();
 
+    /**
+     * Initialize this manager with the given parameters to access TraCI.
+     */
+    void initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface);
+
 private:
 
     /**
-     * This stores all the active person ids. No duplicates.
+     * This stores all the subscribed person ids.
      */
-    std::set<std::string> mActivePersons;
+    std::set<std::string> mSubscribedPersonIds;
 
     /**
-     * This is the difference between currentlyActivePersonIds
-     * (provided with call to update()) and mActivePersons.
-     *
-     * This takes all the elements which are contained in
-     * currentlyActivePersons but not in mActivePersons.
+     * This contains all updated persons. Will be cleared after
+     * getUpdated() was called.
      */
-    std::set<std::string> mNewPersons;
+    std::list<TraCIPerson> mUpdatedPersons;
 
     /**
-     * This is the difference between mActivPersons and
-     * currentlyActivePersonIds (provided with call to update()).
+     * This is the difference between mActivePersonIds and
+     * currently active persons (provided with call to update()).
      *
      * This takes all the elements which are contained in
-     * mActivePersons but not in currentlyActivePersonIds.
+     * mActivePersons but not in currently active person ids.
      */
     std::set<std::string> mDisappearedPersons;
+
+    /**
+     * The connection to the TraCI server.
+     */
+    std::unique_ptr<TraCIConnection> mConnection;
+
+    /**
+     * The command interface to the TraCI server.
+     */
+    std::unique_ptr<TraCICommandInterface> mCommandInterface;
 
     /**
      * Get the active person id set.
@@ -98,13 +130,24 @@ private:
     std::set<std::string> getActivePersonIds();
 
     /**
-     * Add active person.
-     *
-     * Note: Duplicates will be accepted but have no impact on the set.
-     *
-     * @param id of the new person.
+     * Process a subscription result that contains an id list. This is
+     * simply a helper method to improve clarity of update().
      */
-    void addActivePerson(std::string id);
+    void processPersonIDList(std::list<std::string>& idList);
+
+    /**
+     * Subscribe to specific TraCI person variables.
+     *
+     * @param id the id of the person.
+     */
+    void subscribeToPersonVariables(std::string id);
+
+    /**
+     * True if this person is subscribed.
+     *
+     * @param id of the person to check.
+     */
+    bool isSubscribed(std::string id);
 };
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_PERSONSUBSCRIPTIONMANAGER_H_ */
