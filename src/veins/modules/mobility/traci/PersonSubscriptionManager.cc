@@ -48,8 +48,8 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
     // the number of response variables that are contained in this buffer
     uint8_t numberOfResponseVariables;
     buf >> numberOfResponseVariables;
-    // this should either be one or four
-    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 8);
+    // this should either be one or five
+    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 5);
 
     // these need to be filled (total of 8 variables --> x, y count as one)
     double x;
@@ -57,6 +57,7 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
     double speed;
     std::string edge;
     double angle;
+    std::string typeID;
 
     for (int counter = 0; counter < numberOfResponseVariables; ++counter) {
 
@@ -112,7 +113,10 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
                 } else if (responseVariableID == VAR_ANGLE) {
                     ASSERT(varType == TYPE_DOUBLE);
                     buffer >> angle;
-                } else {
+                } else if (responseVariableID == VAR_TYPE) {
+                    ASSERT(varType == TYPE_STRING);
+                    buffer >> typeID;
+                }else {
                     error("Received unknown person subscription result");
                 }
             }
@@ -138,7 +142,7 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
         // make sure we are only entering this section if we got a person that we already subscribed to
         if (isSubscribed(responseObjectID)) {
             // we want to deliver an update for this person for the next call to getUpdated()
-            TraCIPerson person(x, y, edge, speed, angle, responseObjectID);
+            TraCIPerson person(x, y, edge, speed, angle, responseObjectID, typeID);
             mUpdatedPersons.push_back(person);
         }
 
@@ -153,7 +157,7 @@ std::list<TraCIPerson> PersonSubscriptionManager::getUpdated() {
     return temp;
 }
 
-std::set<std::string> PersonSubscriptionManager::getDisappearedPersons() {
+std::set<std::string> PersonSubscriptionManager::getDisappeared() {
     std::set<std::string> temp = mDisappearedPersons;
     mDisappearedPersons.clear();
     return temp;
@@ -164,6 +168,29 @@ void PersonSubscriptionManager::initialize(
         std::unique_ptr<TraCICommandInterface> commandInterface) {
     mConnection = connection;
     mCommandInterface = commandInterface;
+
+    // subscribe to list of person ids
+    simtime_t beginTime = 0;
+    simtime_t endTime = SimTime::getMaxTime();
+    std::string objectId = "";
+    uint8_t variableNumber = 1;
+    uint8_t variable1 = ID_LIST;
+    TraCIBuffer buf = mConnection->query(CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+
+    // remove unnecessary stuff from buffer
+    uint8_t responseCommandLength;
+    buf >> responseCommandLength;
+    ASSERT(responseCommandLength == 0);
+    // this is the length of the command
+    uint32_t responseCommandLengthExtended;
+    buf >> responseCommandLengthExtended;
+    uint8_t responseCommandID;
+    buf >> responseCommandID;
+    ASSERT(responseCommandID == RESPONSE_SUBSCRIBE_PERSON_VARIABLE);
+
+    update(buf);
+    ASSERT(buf.eof());
+
 }
 
 void PersonSubscriptionManager::processPersonIDList(std::list<std::string>& idList) {
@@ -203,15 +230,28 @@ void PersonSubscriptionManager::subscribeToPersonVariables(std::string id) {
     simtime_t beginTime = 0;
     simtime_t endTime = SimTime::getMaxTime();
     std::string objectId = personID;
-    uint8_t variableNumber = 4;
+    uint8_t variableNumber = 5;
     uint8_t variable1 = VAR_POSITION;
     uint8_t variable2 = VAR_ROAD_ID;
     uint8_t variable3 = VAR_SPEED;
     uint8_t variable4 = VAR_ANGLE;
+    uint8_t variable5 = VAR_TYPE;
 
     TraCIBuffer buffer = connection->query(CMD_SUBSCRIBE_PERSON_VARIABLE,
             TraCIBuffer() << beginTime << endTime << objectId << variableNumber
-                    << variable1 << variable2 << variable3 << variable4);
+                    << variable1 << variable2 << variable3 << variable4 << variable5);
+
+    // remove unnecessary stuff from buffer
+    uint8_t responseCommandLength;
+    buf >> responseCommandLength;
+    ASSERT(responseCommandLength == 0);
+    // this is the length of the command
+    uint32_t responseCommandLengthExtended;
+    buf >> responseCommandLengthExtended;
+    uint8_t responseCommandID;
+    buf >> responseCommandID;
+    ASSERT(responseCommandID == RESPONSE_SUBSCRIBE_PERSON_VARIABLE);
+
     update(buffer);
     ASSERT(buffer.eof());
 }

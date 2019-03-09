@@ -20,9 +20,9 @@
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
 
 TraCIVehicle::TraCIVehicle(double x, double y, std::string edgeID, double speed,
-        double angle, std::string id, int signals, double length,
+        double angle, std::string id, std::string typeID, int signals, double length,
         double height, double width)
-    : TrafficParticipant(x, y, edgeID, speed, angle, id)
+    : TrafficParticipant(x, y, edgeID, speed, angle, id, typeID)
     , mSignals(signals)
     , mLength(length)
     , mHeight(height)

@@ -20,13 +20,14 @@
 
 #include "veins/modules/mobility/traci/TrafficParticipant.h"
 
-TrafficParticipant::TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id)
+TrafficParticipant::TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
     : mX(x)
     , mY(y)
     , mEdgeID(edgeID)
     , mSpeed(speed)
     , mAngle(angle)
     , mID(id)
+    , mTypeID(typeID)
 {
 }
 
@@ -49,4 +50,8 @@ double TrafficParticipant::getAngle() {
 
 std::string TrafficParticipant::getID() {
     return mID;
+}
+
+std::string TrafficParticipant::getTypeID() {
+    return mTypeID;
 }

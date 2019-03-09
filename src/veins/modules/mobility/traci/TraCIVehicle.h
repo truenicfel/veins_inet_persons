@@ -36,13 +36,14 @@ public:
      * @param speed to initialize this participant with.
      * @param angle to initialize this participant with.
      * @param id to initialize this participant with.
+     * @param typeID to initialize this participant with.
      * @param sginals to initialize this vehicle with.
      * @param length to initialize this vehicle with.
      * @param height to initialize this vehicle with.
      * @param width to initialize this vehicle with.
      */
     TraCIVehicle(double x, double y, std::string edgeID, double speed,
-            double angle, std::string id, int signals, double length,
+            double angle, std::string id, std::string typeID, int signals, double length,
             double height, double width);
 
     /**

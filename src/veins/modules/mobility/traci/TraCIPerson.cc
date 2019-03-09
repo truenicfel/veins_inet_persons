@@ -20,8 +20,8 @@
 
 #include "veins/modules/mobility/traci/TraCIPerson.h"
 
-TraCIPerson::TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id)
-    : TrafficParticipant(x, y, edgeID, speed, angle, id)
+TraCIPerson::TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
+    : TrafficParticipant(x, y, edgeID, speed, angle, id, typeID)
 {
 }
 

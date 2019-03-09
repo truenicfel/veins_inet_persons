@@ -45,8 +45,8 @@ bool VehicleSubscriptionManager::update(TraCIBuffer& buffer) {
     // the number of response variables that are contained in this buffer
     uint8_t numberOfResponseVariables;
     buf >> numberOfResponseVariables;
-    // this should either be one or four
-    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 4);
+    // this should either be one or nine
+    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 9);
 
     // these need to be filled
     double x;
@@ -58,6 +58,7 @@ bool VehicleSubscriptionManager::update(TraCIBuffer& buffer) {
     double length;
     double height;
     double width;
+    std::string typeID;
 
 
     for (int counter = 0; counter < numberOfResponseVariables; ++counter) {
@@ -129,7 +130,12 @@ bool VehicleSubscriptionManager::update(TraCIBuffer& buffer) {
                 else if (variable1_resp == VAR_WIDTH) {
                     ASSERT(varType == TYPE_DOUBLE);
                     buffer >> width;
-                } else {
+                }
+                else if (variable1_resp == VAR_TYPE) {
+                    ASSERT(varType == TYPE_STRING);
+                    buffer >> typeID;
+                }
+                else {
                     error("Received unknown vehicle subscription result");
                 }
             }
@@ -155,7 +161,7 @@ bool VehicleSubscriptionManager::update(TraCIBuffer& buffer) {
         // make sure we are only entering this section if we got a vehicle that we already subscribed to
         if (isSubscribed(responseObjectID)) {
             // we want to deliver an update for this vehicle for the next call to getUpdated()
-            TraCIVehicle vehicle(x, y, edge, speed, angle, responseObjectID, signals, length, height, width);
+            TraCIVehicle vehicle(x, y, edge, speed, angle, responseObjectID, typeID, signals, length, height, width);
             mUpdatedVehicles.push_back(vehicle);
         }
 
@@ -179,6 +185,31 @@ std::set<std::string> VehicleSubscriptionManager::getDisappeared() {
 void VehicleSubscriptionManager::initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface) {
     mConnection = connection;
     mCommandInterface = commandInterface;
+
+    // initialize subscriptions
+    // subscribe to list of vehicle ids
+    simtime_t beginTime = 0;
+    simtime_t endTime = SimTime::getMaxTime();
+    std::string objectId = "";
+    uint8_t variableNumber = 1;
+    uint8_t variable1 = ID_LIST;
+    TraCIBuffer buf = mConnection->query(CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+
+    // remove unnecessary stuff from buffer
+    uint8_t responseCommandLength;
+    buf >> responseCommandLength;
+    ASSERT(responseCommandLength == 0);
+    // this is the length of the command
+    uint32_t responseCommandLengthExtended;
+    buf >> responseCommandLengthExtended;
+    uint8_t responseCommandID;
+    buf >> responseCommandID;
+    ASSERT(responseCommandID == RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE);
+
+    update(buf);
+
+    ASSERT(buf.eof());
+
 }
 
 void VehicleSubscriptionManager::processVehicleIDList(std::list<std::string>& idList) {
@@ -217,7 +248,7 @@ void VehicleSubscriptionManager::subscribeToVehicleVariables(std::string id) {
     simtime_t beginTime = 0;
     simtime_t endTime = SimTime::getMaxTime();
     std::string objectId = vehicleId;
-    uint8_t variableNumber = 8;
+    uint8_t variableNumber = 9;
     uint8_t variable1 = VAR_POSITION;
     uint8_t variable2 = VAR_ROAD_ID;
     uint8_t variable3 = VAR_SPEED;
@@ -226,8 +257,21 @@ void VehicleSubscriptionManager::subscribeToVehicleVariables(std::string id) {
     uint8_t variable6 = VAR_LENGTH;
     uint8_t variable7 = VAR_HEIGHT;
     uint8_t variable8 = VAR_WIDTH;
+    uint8_t variable9 = VAR_TYPE;
 
-    TraCIBuffer buffer = mConnection->query(CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7 << variable8);
+    TraCIBuffer buffer = mConnection->query(CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7 << variable8 << variable9);
+
+    // remove unnecessary stuff from buffer
+    uint8_t responseCommandLength;
+    buf >> responseCommandLength;
+    ASSERT(responseCommandLength == 0);
+    // this is the length of the command
+    uint32_t responseCommandLengthExtended;
+    buf >> responseCommandLengthExtended;
+    uint8_t responseCommandID;
+    buf >> responseCommandID;
+    ASSERT(responseCommandID == RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE);
+
     update(buffer);
     ASSERT(buffer.eof());
 }

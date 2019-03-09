@@ -43,8 +43,9 @@ public:
      * @param speed to initialize this participant with.
      * @param angle to initialize this participant with.
      * @param id to initialize this participant with.
+     * @param typeID to initialize this participant with.
      */
-    TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id);
+    TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID);
 
     /**
      * Default destructor.
@@ -87,6 +88,13 @@ public:
      */
     std::string getID();
 
+    /**
+     * Get the traci type id of this traffic participant.
+     *
+     * @return std::string: the type id.
+     */
+    std::string getTypeID();
+
 private:
 
     /**
@@ -118,6 +126,11 @@ private:
      * Stores the id of this person.
      */
     std::string mID;
+
+    /**
+     * Stores the type id of this person.
+     */
+    std::string mTypeID;
 
 };
 

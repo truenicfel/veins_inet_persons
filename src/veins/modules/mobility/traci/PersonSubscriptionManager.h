@@ -83,7 +83,7 @@ public:
      *
      * @return std::set<std::string> a set of person ids.
      */
-    std::set<std::string> getDisappearedPersons();
+    std::set<std::string> getDisappeared();
 
     /**
      * Initialize this manager with the given parameters to access TraCI.

@@ -40,8 +40,9 @@ class TraCIPerson: public TrafficParticipant {
      * @param speed to initialize this participant with.
      * @param angle to initialize this participant with.
      * @param id to initialize this participant with.
+     * @param typeID to initialize this participant with.
      */
-    TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id);
+    TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID);
 
     /**
      * Default destructor.
