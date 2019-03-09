@@ -29,6 +29,9 @@
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "veins/modules/mobility/traci/TraCIBuffer.h"
+
+namespace Veins {
 
 class VehicleSubscriptionManager {
 public:
@@ -40,7 +43,7 @@ public:
     /**
      * Default destructor.
      */
-    virtual ~VehicleSubscriptionManager();
+    virtual ~VehicleSubscriptionManager() = default;
 
     /**
      * Update this VehicleSubscriptionManager with the given
@@ -89,7 +92,7 @@ public:
     /**
     * Initialize this manager with the given parameters to access TraCI.
     */
-    void initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface);
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
 
 private:
 
@@ -116,12 +119,12 @@ private:
     /**
      * The connection to the TraCI server.
      */
-    std::unique_ptr<TraCIConnection> mConnection;
+    std::shared_ptr<TraCIConnection> mConnection;
 
     /**
      * The command interface to the TraCI server.
      */
-    std::unique_ptr<TraCICommandInterface> mCommandInterface;
+    std::shared_ptr<TraCICommandInterface> mCommandInterface;
 
     /**
      * Process a subscription result that contains an id list. This is
@@ -143,5 +146,7 @@ private:
      */
     bool isSubscribed(std::string id);
 };
+
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_VEHICLESUBSCRIPTIONMANAGER_H_ */

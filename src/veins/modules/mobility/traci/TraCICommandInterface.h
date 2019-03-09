@@ -139,6 +139,14 @@ public:
         double getDeccel();
 
         /**
+         * Get id list of active vehicles.
+         *
+         * @return std::list<std::string>: Returns a list of ids of all vehicles
+         * currently running within the scenario (the given vehicle ID is ignored).
+         */
+        std::list<std::string> getIdList();
+
+        /**
          * Get the vehicle's CO2 emissions in mg during this time step.
          *
          * @return the vehicle's CO2 emissions, -1001 in case of error

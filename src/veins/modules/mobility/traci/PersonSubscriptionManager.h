@@ -28,6 +28,9 @@
 #include "veins/modules/mobility/traci/TraCIPerson.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "veins/modules/mobility/traci/TraCIBuffer.h"
+
+namespace Veins {
 
 class PersonSubscriptionManager {
 public:
@@ -48,8 +51,10 @@ public:
      *
      * @param currentlyActivePersonIds A list containing the currently active persons
      * identified by their ids.
+     *
+     * @return true
      */
-    void update(std::list<std::string>& currentlyActivePersonIds);
+    bool update(std::list<std::string>& currentlyActivePersonIds);
 
     /**
      * Update this manager with the given buffer containing a subscription
@@ -88,7 +93,7 @@ public:
     /**
      * Initialize this manager with the given parameters to access TraCI.
      */
-    void initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface);
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
 
 private:
 
@@ -115,12 +120,12 @@ private:
     /**
      * The connection to the TraCI server.
      */
-    std::unique_ptr<TraCIConnection> mConnection;
+    std::shared_ptr<TraCIConnection> mConnection;
 
     /**
      * The command interface to the TraCI server.
      */
-    std::unique_ptr<TraCICommandInterface> mCommandInterface;
+    std::shared_ptr<TraCICommandInterface> mCommandInterface;
 
     /**
      * Get the active person id set.
@@ -149,5 +154,7 @@ private:
      */
     bool isSubscribed(std::string id);
 };
+
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_PERSONSUBSCRIPTIONMANAGER_H_ */

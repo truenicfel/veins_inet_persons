@@ -23,6 +23,8 @@
 
 #include "veins/modules/mobility/traci/TrafficParticipant.h"
 
+namespace Veins {
+
 /**
  * @class TraCIPerson
  *
@@ -31,6 +33,7 @@
  */
 class TraCIPerson: public TrafficParticipant {
 
+public:
     /**
      * Constructor.
      *
@@ -50,5 +53,7 @@ class TraCIPerson: public TrafficParticipant {
     ~TraCIPerson() = default;
 
 };
+
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACIPERSON_H_ */

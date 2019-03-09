@@ -23,6 +23,8 @@
 
 #include <string>
 
+namespace Veins {
+
 /**
  * @class TrafficParticipant
  *
@@ -134,6 +136,6 @@ private:
 
 };
 
-
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRAFFICPARTICIPANT_H_ */

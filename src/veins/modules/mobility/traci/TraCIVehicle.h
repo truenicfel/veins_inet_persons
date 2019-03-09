@@ -23,6 +23,8 @@
 
 #include "veins/modules/mobility/traci/TrafficParticipant.h"
 
+namespace Veins {
+
 class TraCIVehicle: public TrafficParticipant {
 
 public:
@@ -93,6 +95,8 @@ private:
      */
     double mWidth;
 };
+
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACIVEHICLE_H_ */
 

@@ -21,6 +21,8 @@
 #include "veins/modules/mobility/traci/TraCISubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
+namespace Veins {
+
 TraCISubscriptionManager::TraCISubscriptionManager(bool explicitUpdateIfIdListSubscriptionUnavailable)
     : mConnection(nullptr)
     , mCommandInterface(nullptr)
@@ -36,36 +38,36 @@ void TraCISubscriptionManager::processSubscriptionResult(TraCIBuffer& buffer) {
     bool receivedVehicleIDListSubscription = false;
 
     uint32_t subscriptionResultCount;
-    buf >> subscriptionResultCount;
+    buffer >> subscriptionResultCount;
     EV_DEBUG << "Getting " << subscriptionResultCount << " subscription results" << endl;
     for (uint32_t i = 0; i < subscriptionResultCount; ++i) {
 
         // this should be zero
         uint8_t responseCommandLength;
-        buf >> responseCommandLength;
+        buffer >> responseCommandLength;
         ASSERT(responseCommandLength == 0);
         // this is the length of the command
         uint32_t responseCommandLengthExtended;
-        buf >> responseCommandLengthExtended;
+        buffer >> responseCommandLengthExtended;
         // this is the response command identifier
         // with this we can find out what kind of subscription result
         // we receive (person subscription or vehicle subscription etc.)
         uint8_t responseCommandID;
-        buf >> responseCommandID;
+        buffer >> responseCommandID;
 
-        if (responseCommandID == RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE) {
+        if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE) {
+            receivedVehicleIDListSubscription =
+                    mVehicleSubscriptionManager.update(buffer) || receivedVehicleIDListSubscription;
+        } else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_PERSON_VARIABLE) {
             receivedPersonIDListSubscription =
-                                receivedVehicleIDListSubscription || mVehicleSubscriptionManager.update(buffer);
-        } else if (responseCommandID == RESPONSE_SUBSCRIBE_PERSON_VARIABLE) {
-            receivedPersonIDListSubscription =
-                    receivedPersonIDListSubscription || mPersonSubscriptionManager.update(buffer);
+                    mPersonSubscriptionManager.update(buffer)  || receivedPersonIDListSubscription;
         }
-        else if (commandId_resp == RESPONSE_SUBSCRIBE_SIM_VARIABLE)
-            error("SIM subscription can't be handled yet!");
-        else if (commandId_resp == RESPONSE_SUBSCRIBE_TL_VARIABLE)
-            error("traffic light subscription can't be handled yet!");
+        else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_SIM_VARIABLE)
+            throw cRuntimeError("SIM subscription can't be handled yet!");
+        else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_TL_VARIABLE)
+            throw cRuntimeError("traffic light subscription can't be handled yet!");
         else {
-            error("Received unknown subscription result!");
+            throw cRuntimeError("Received unknown subscription result!");
         }
 
     }
@@ -75,16 +77,18 @@ void TraCISubscriptionManager::processSubscriptionResult(TraCIBuffer& buffer) {
 
     // if there was no person id list received we perform a manual update
     if (!receivedPersonIDListSubscription && mExplicitUpdateIfIdListSubscriptionUnavailable) {
-        Veins::TraCICommandInterface::Person defaultPerson = commandIfc->person("");
+        Veins::TraCICommandInterface::Person defaultPerson = mCommandInterface->person("");
         std::list<std::string> idList = defaultPerson.getIdList();
         mPersonSubscriptionManager.update(idList);
     }
     // if there was no vehicle id list received we perform a manual update
     if (!receivedVehicleIDListSubscription && mExplicitUpdateIfIdListSubscriptionUnavailable) {
-        Veins::TraCICommandInterface::Vehicle defaultVehicle = commandIfc->vehicle("");
+        Veins::TraCICommandInterface::Vehicle defaultVehicle = mCommandInterface->vehicle("");
         std::list<std::string> idList = defaultVehicle.getIdList();
         mVehicleSubscriptionManager.update(idList);
     }
+
+    ASSERT(buffer.eof());
 
 }
 
@@ -98,7 +102,7 @@ std::set<std::string> TraCISubscriptionManager::getDisappearedPersons() {
     return mPersonSubscriptionManager.getDisappeared();
 }
 
-std::list<TraCIPerson> TraCISubscriptionManager::getUpdatedVehicles() {
+std::list<TraCIVehicle> TraCISubscriptionManager::getUpdatedVehicles() {
     // simply delegate
     return mVehicleSubscriptionManager.getUpdated();
 }
@@ -108,11 +112,13 @@ std::set<std::string> TraCISubscriptionManager::getDisappearedVehicles() {
     return mVehicleSubscriptionManager.getDisappeared();
 }
 
-void TraCISubscriptionManager::initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface) {
+void TraCISubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
     mConnection = connection;
     mCommandInterface = commandInterface;
     // call subscription managers init
     mPersonSubscriptionManager.initialize(connection, commandInterface);
     mVehicleSubscriptionManager.initialize(connection, commandInterface);
 }
+
+} // end namespace Veins
 

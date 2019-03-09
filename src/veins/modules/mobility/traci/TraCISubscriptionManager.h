@@ -29,6 +29,8 @@
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
 
+namespace Veins {
+
 /**
  * @class TraCISubscriptionManager
  *
@@ -109,19 +111,19 @@ public:
     /**
      * Initialize this manager with the given parameters to access the traci server.
      */
-    void initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface);
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
 
 private:
 
     /**
      * The connection to the TraCI server.
      */
-    std::unique_ptr<TraCIConnection> mConnection;
+    std::shared_ptr<TraCIConnection> mConnection;
 
     /**
      * The command interface to the TraCI server.
      */
-    std::unique_ptr<TraCICommandInterface> mCommandInterface;
+    std::shared_ptr<TraCICommandInterface> mCommandInterface;
 
     /**
      * Stores if the id lists of participants should be updated with an explicit request
@@ -140,5 +142,7 @@ private:
     VehicleSubscriptionManager mVehicleSubscriptionManager;
 
 };
+
+} // end namespace Veins
 
 #endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACISUBSCRIPTIONMANAGER_H_ */

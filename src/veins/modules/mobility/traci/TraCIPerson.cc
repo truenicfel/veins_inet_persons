@@ -20,9 +20,13 @@
 
 #include "veins/modules/mobility/traci/TraCIPerson.h"
 
+namespace Veins {
+
 TraCIPerson::TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
     : TrafficParticipant(x, y, edgeID, speed, angle, id, typeID)
 {
+}
+
 }
 
 

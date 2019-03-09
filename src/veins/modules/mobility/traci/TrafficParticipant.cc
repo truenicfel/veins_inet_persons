@@ -20,6 +20,8 @@
 
 #include "veins/modules/mobility/traci/TrafficParticipant.h"
 
+namespace Veins {
+
 TrafficParticipant::TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
     : mX(x)
     , mY(y)
@@ -55,3 +57,5 @@ std::string TrafficParticipant::getID() {
 std::string TrafficParticipant::getTypeID() {
     return mTypeID;
 }
+
+} // end namespace Veins

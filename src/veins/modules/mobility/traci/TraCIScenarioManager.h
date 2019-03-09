@@ -39,8 +39,9 @@
 #include "veins/modules/mobility/traci/TraCICoord.h"
 #include "veins/modules/mobility/traci/VehicleSignal.h"
 #include "veins/modules/mobility/traci/TraCIRegionOfInterest.h"
-#include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
-
+#include "veins/modules/mobility/traci/TraCISubscriptionManager.h"
+#include "veins/modules/mobility/traci/TraCIVehicle.h"
+#include "veins/modules/mobility/traci/TraCIPerson.h"
 
 namespace Veins {
 
@@ -126,13 +127,12 @@ protected:
     double areaSum;
 
     AnnotationManager* annotations;
-    std::unique_ptr<TraCIConnection> connection;
-    std::unique_ptr<TraCICommandInterface> commandIfc;
+    std::shared_ptr<TraCIConnection> connection;
+    std::shared_ptr<TraCICommandInterface> commandIfc;
 
     size_t nextNodeVectorIndex; /**< next OMNeT++ module vector index to use */
     std::map<std::string, cModule*> hosts; /**< vector of all hosts managed by us */
     std::set<std::string> unEquippedHosts;
-    std::set<std::string> subscribedVehicles; /**< all vehicles we have already subscribed to */
     std::map<std::string, cModule*> trafficLights; /**< vector of all traffic lights managed by us */
     uint32_t activeVehicleCount; /**< number of vehicles, be it parking or driving **/
     uint32_t parkingVehicleCount; /**< number of parking vehicles, derived from parking start/end events */
@@ -141,17 +141,14 @@ protected:
     cMessage* connectAndStartTrigger; /**< self-message scheduled for when to connect to TraCI server and start running */
     cMessage* executeOneTimestepTrigger; /**< self-message scheduled for when to next call executeOneTimestep */
 
-    /**
-     * All persons we have already subscribed to.
-     */
-    std::set<std::string> subscribedPersons;
-    uint32_t activePersonCount;
-
     BaseWorldUtility* world;
     std::map<const TraCIMobility*, const VehicleObstacle*> vehicleObstacles;
     VehicleObstacleControl* vehicleObstacleControl;
 
-    PersonSubscriptionManager personSubscriptionManager;
+    /**
+     * Stores the subscription manager handling everything related to subscriptions.
+     */
+    TraCISubscriptionManager subscriptionManager;
 
     void executeOneTimestep(); /**< read and execute all commands for the next timestep */
 
@@ -168,13 +165,6 @@ protected:
     void processSubcriptionResult(TraCIBuffer& buf);
 
     /*
-     * Vehicle variable subscription handling:
-     */
-    void subscribeToVehicleVariables(std::string vehicleId);
-    void unsubscribeFromVehicleVariables(std::string vehicleId);
-    void processVehicleSubscription(std::string objectId, TraCIBuffer& buf);
-
-    /*
      * Simulation subscription handling:
      */
     void processSimSubscription(std::string objectId, TraCIBuffer& buf);
@@ -185,60 +175,6 @@ protected:
     void subscribeToTrafficLightVariables(std::string tlId);
     void unsubscribeFromTrafficLightVariables(std::string tlId);
     void processTrafficLightSubscription(std::string objectId, TraCIBuffer& buf);
-
-    /*
-     * Person variable subscription handling:
-     */
-    /**
-     * Subscribes to the following person variables of the given person:
-     *  - position (0x42)
-     *  - speed (0x40)
-     *  - angle (0x43)
-     *  - road id (0x50)
-     * (see https://sumo.dlr.de/wiki/TraCI/Person_Value_Retrieval)
-     *
-     * Note: This should be called when a person enters the simulation.
-     *
-     * @param personID string representation of the person identification.
-     */
-    void subscribeToPersonVariables(std::string personID);
-
-    /**
-     * Unsubscribes from the following person variables of the given person:
-     *  - position (0x42)
-     *  - speed (0x40)
-     *  - angle (0x43)
-     *  - road id (0x50)
-     * (see https://sumo.dlr.de/wiki/TraCI/Person_Value_Retrieval)
-     *
-     * Note: This should be called when a person leaves the simulation.
-     *
-     * @param personID string representation of the person identification.
-     */
-    void unsubscribeFromPersonVariables(std::string personID);
-
-    /**
-     * Processes the result of a person subscription given in buf param. It
-     * will make sure that:
-     *  - new persons entering the simulation will be subscribed to
-     *  - persons leaving the simulation will be unsubscribed from
-     *  - persons that got an position update will have its position updated
-     *  in omnetpp
-     *
-     * @param objectID The objectID this subscription belongs to.
-     * @param buf the traci buffer containing the subscriptions.
-     */
-    void processPersonSubscription(std::string objectId, TraCIBuffer& buf);
-
-    /**
-     * Helper method for processPersonSubscription which will handle making
-     * sure that persons entering the simulation are added and persons leaving
-     * the simulation are removed.
-     *
-     * @param varType This should be TYPE_STRINGLIST (will be checked)
-     * @param buf the traci buffer containing the string list.
-     */
-    void processPersonIDListSubscription(uint8_t varType, TraCIBuffer& buf);
 
     /**
      * parses the vector of module types in ini file
@@ -251,6 +187,23 @@ protected:
      * transforms a list of mappings of an omnetpp.ini parameter in a list
      */
     TypeMapping parseMappings(std::string parameter, std::string parameterName, bool allowEmpty = false);
+
+    /**
+     * Helper method that takes a list of updated vehicles and updates/adds
+     * modules according to the vehicle data.
+     *
+     * @param updatedVehicles the list of vehicles.
+     */
+    void processUpdatedVehicles(std::list<TraCIVehicle>& updatedVehicles);
+
+    /**
+     * Helper method that takes a list of updated person and updates/adds
+     * modules according to the person data.
+     *
+     * @param updatedPersons the list of persons.
+     */
+    void processUpdatedPersons(std::list<TraCIPerson>& updatedPersons);
+
 };
 
 class VEINS_API TraCIScenarioManagerAccess {

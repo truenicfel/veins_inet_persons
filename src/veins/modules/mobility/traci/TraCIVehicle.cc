@@ -19,6 +19,8 @@
 //
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
 
+namespace Veins {
+
 TraCIVehicle::TraCIVehicle(double x, double y, std::string edgeID, double speed,
         double angle, std::string id, std::string typeID, int signals, double length,
         double height, double width)
@@ -45,3 +47,5 @@ double TraCIVehicle::getHeight() {
 double TraCIVehicle::getWidth() {
     return mWidth;
 }
+
+} // end namespace Veins

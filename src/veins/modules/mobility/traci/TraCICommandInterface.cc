@@ -266,6 +266,11 @@ std::string TraCICommandInterface::Vehicle::getRouteId()
     return traci->genericGetString(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_ROUTE_ID, RESPONSE_GET_VEHICLE_VARIABLE);
 }
 
+std::list<std::string> TraCICommandInterface::Vehicle::getIdList()
+{
+    return traci->genericGetStringList(CMD_GET_VEHICLE_VARIABLE, nodeId, ID_LIST, RESPONSE_GET_VEHICLE_VARIABLE);
+}
+
 std::string TraCICommandInterface::Person::getTypeId()
 {
     return traci->genericGetString(CMD_GET_PERSON_VARIABLE, nodeId, VAR_TYPE, RESPONSE_GET_PERSON_VARIABLE);
