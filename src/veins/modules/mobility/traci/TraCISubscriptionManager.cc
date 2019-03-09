@@ -95,7 +95,17 @@ std::list<TraCIPerson> TraCISubscriptionManager::getUpdatedPersons() {
 
 std::set<std::string> TraCISubscriptionManager::getDisappearedPersons() {
     // simply delegate
-    return mPersonSubscriptionManager.getDisappearedPersons();
+    return mPersonSubscriptionManager.getDisappeared();
+}
+
+std::list<TraCIPerson> TraCISubscriptionManager::getUpdatedVehicles() {
+    // simply delegate
+    return mVehicleSubscriptionManager.getUpdated();
+}
+
+std::set<std::string> TraCISubscriptionManager::getDisappearedVehicles() {
+    // simply delegate
+    return mVehicleSubscriptionManager.getDisappeared();
 }
 
 void TraCISubscriptionManager::initialize(std::unique_ptr<TraCIConnection> connection, std::unique_ptr<TraCICommandInterface> commandInterface) {
@@ -103,5 +113,6 @@ void TraCISubscriptionManager::initialize(std::unique_ptr<TraCIConnection> conne
     mCommandInterface = commandInterface;
     // call subscription managers init
     mPersonSubscriptionManager.initialize(connection, commandInterface);
+    mVehicleSubscriptionManager.initialize(connection, commandInterface);
 }
 
