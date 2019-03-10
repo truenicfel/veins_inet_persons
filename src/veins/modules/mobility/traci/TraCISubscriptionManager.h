@@ -26,6 +26,7 @@
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
 #include "veins/modules/mobility/traci/VehicleSubscriptionManager.h"
 #include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
+#include "veins/modules/mobility/traci/SimulationSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
 
@@ -108,6 +109,40 @@ public:
      */
     std::set<std::string> getDisappearedVehicles();
 
+
+    /**
+     * Get the ids of vehicles that started teleporting since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that started teleporting.
+     */
+    std::list<std::string> getStartedTeleporting();
+
+    /**
+     * Get the ids of vehicles that started parking since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that started parking.
+     */
+    std::list<std::string> getStartedParking();
+
+    /**
+     * Get the ids of vehicles that ended parking since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that ended parking.
+     */
+    std::list<std::string> getEndedParking();
+
     /**
      * Initialize this manager with the given parameters to access the traci server.
      */
@@ -140,6 +175,11 @@ private:
      * Stores the vehicle subscription manager.
      */
     VehicleSubscriptionManager mVehicleSubscriptionManager;
+
+    /**
+     * Stores the simulation subscription manager.
+     */
+    SimulationSubscriptionManager mSimulationSubscriptionManager;
 
 };
 

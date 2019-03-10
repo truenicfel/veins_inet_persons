@@ -298,24 +298,6 @@ void TraCIScenarioManager::init_traci()
         }
     }
 
-    {
-        // subscribe to list of departed and arrived vehicles, as well as simulation time
-//        simtime_t beginTime = 0;
-//        simtime_t endTime = SimTime::getMaxTime();
-//        std::string objectId = "";
-//        uint8_t variableNumber = 7;
-//        uint8_t variable1 = VAR_DEPARTED_VEHICLES_IDS;
-//        uint8_t variable2 = VAR_ARRIVED_VEHICLES_IDS;
-//        uint8_t variable3 = commandInterface->getTimeStepCmd();
-//        uint8_t variable4 = VAR_TELEPORT_STARTING_VEHICLES_IDS;
-//        uint8_t variable5 = VAR_TELEPORT_ENDING_VEHICLES_IDS;
-//        uint8_t variable6 = VAR_PARKING_STARTING_VEHICLES_IDS;
-//        uint8_t variable7 = VAR_PARKING_ENDING_VEHICLES_IDS;
-//        TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_SIM_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7);
-//        processSubcriptionResult(buf);
-//        ASSERT(buf.eof());
-    }
-
     // intialize the subscription manager (performs subscriptions)
     subscriptionManager.initialize(connection, commandIfc);
 
@@ -599,6 +581,35 @@ void TraCIScenarioManager::executeOneTimestep()
             if (mod) deleteManagedModule(personID);
             EV_DEBUG << "Unsubscribed to person with id " << personID << std::endl;
         }
+
+        // simulation next
+
+        // remove all modules that are currently teleporting (they will be added automatically again)
+        for (auto id: subscriptionManager.getStartedTeleporting()) {
+            // check if this object has been deleted already (e.g. because it was outside the ROI)
+            cModule* mod = getManagedModule(id);
+            if (mod) deleteManagedModule(id);
+            EV_DEBUG << "Person with " << id << " started teleporting." << std::endl;
+        }
+
+        // change parking state of all cars that started parking
+        for (auto id: subscriptionManager.getStartedParking()) {
+            cModule* mod = getManagedModule(id);
+            auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
+            for (auto mm : mobilityModules) {
+                mm->changeParkingState(true);
+            }
+        }
+
+        // change parking state of all cars that stopped parking
+        for (auto id: subscriptionManager.getEndedParking()) {
+            cModule* mod = getManagedModule(id);
+            auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
+            for (auto mm : mobilityModules) {
+                mm->changeParkingState(false);
+            }
+        }
+
 
     }
 
@@ -1024,22 +1035,6 @@ void TraCIScenarioManager::processUpdatedPersons(std::list<TraCIPerson>& updated
 
 }
 
-void TraCIScenarioManager::processSubcriptionResult(TraCIBuffer& buf)
-{
-    uint8_t cmdLength_resp;
-    buf >> cmdLength_resp;
-    uint32_t cmdLengthExt_resp;
-    buf >> cmdLengthExt_resp;
-    uint8_t commandId_resp;
-    buf >> commandId_resp;
-    std::string objectId_resp;
-    buf >> objectId_resp;
-
-    if (commandId_resp == RESPONSE_SUBSCRIBE_SIM_VARIABLE)
-        processSimSubscription(objectId_resp, buf);
-    else if (commandId_resp == RESPONSE_SUBSCRIBE_TL_VARIABLE)
-        processTrafficLightSubscription(objectId_resp, buf);
-    else {
-        error("Received unhandled subscription result");
-    }
+void TraCIScenarioManager::processSubcriptionResult(TraCIBuffer& buf) {
+    error("Not supported");
 }

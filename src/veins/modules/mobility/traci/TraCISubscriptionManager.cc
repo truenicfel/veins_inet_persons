@@ -29,6 +29,7 @@ TraCISubscriptionManager::TraCISubscriptionManager(bool explicitUpdateIfIdListSu
     , mExplicitUpdateIfIdListSubscriptionUnavailable(explicitUpdateIfIdListSubscriptionUnavailable)
     , mPersonSubscriptionManager()
     , mVehicleSubscriptionManager()
+    , mSimulationSubscriptionManager()
 {
 }
 
@@ -61,9 +62,8 @@ void TraCISubscriptionManager::processSubscriptionResult(TraCIBuffer& buffer) {
         } else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_PERSON_VARIABLE) {
             receivedPersonIDListSubscription =
                     mPersonSubscriptionManager.update(buffer)  || receivedPersonIDListSubscription;
-        }
-        else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_SIM_VARIABLE)
-            throw cRuntimeError("SIM subscription can't be handled yet!");
+        } else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_SIM_VARIABLE)
+            mSimulationSubscriptionManager.update(buffer);
         else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_TL_VARIABLE)
             throw cRuntimeError("traffic light subscription can't be handled yet!");
         else {
@@ -112,12 +112,25 @@ std::set<std::string> TraCISubscriptionManager::getDisappearedVehicles() {
     return mVehicleSubscriptionManager.getDisappeared();
 }
 
+std::list<std::string> TraCISubscriptionManager::getStartedTeleporting() {
+    return mSimulationSubscriptionManager.getStartedTeleporting();
+}
+
+std::list<std::string> TraCISubscriptionManager::getStartedParking() {
+    return mSimulationSubscriptionManager.getStartedParking();
+}
+
+std::list<std::string> TraCISubscriptionManager::getEndedParking() {
+    return mSimulationSubscriptionManager.getEndedParking();
+}
+
 void TraCISubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
     mConnection = connection;
     mCommandInterface = commandInterface;
     // call subscription managers init
     mPersonSubscriptionManager.initialize(connection, commandInterface);
     mVehicleSubscriptionManager.initialize(connection, commandInterface);
+    mSimulationSubscriptionManager.initialize(connection, commandInterface);
 }
 
 } // end namespace Veins

@@ -1,0 +1,122 @@
+//
+// Copyright (C) 2006-2017 Christoph Sommer <sommer@ccs-labs.org>
+//
+// Documentation for these modules is at http://veins.car2x.org/
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_
+
+#include <list>
+
+#include "veins/modules/mobility/traci/TraCIConnection.h"
+#include "veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "veins/modules/mobility/traci/TraCIBuffer.h"
+
+namespace Veins {
+
+class SimulationSubscriptionManager {
+public:
+    SimulationSubscriptionManager();
+
+    /**
+     *
+     */
+    virtual ~SimulationSubscriptionManager() = default;
+
+    /**
+     * Initialize this manager.
+     *
+     * The manager gets initialized with the given variables and a subscription
+     * to simulation values is performed.
+     *
+     * @param connection shared ptr to connection to traci server.
+     * @param commmandInterface shared pointer to command interface to traci server.
+     */
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
+
+    /**
+     * Update this subscription manager with the given TraCIBuffer. After a call to
+     * this the getter of this class will be updated and return different results than
+     * before the call to update().
+     *
+     *@param buffer the buffer containing the subscription result.
+     */
+    void update(TraCIBuffer& buffer);
+
+    /**
+     * Get the ids of vehicles that started teleporting since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that started teleporting.
+     */
+    std::list<std::string> getStartedTeleporting();
+
+    /**
+     * Get the ids of vehicles that started parking since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that started parking.
+     */
+    std::list<std::string> getStartedParking();
+
+    /**
+     * Get the ids of vehicles that ended parking since
+     * the last time you called this method.
+     *
+     * Note: Multiple calls to this method will not yield the
+     * same result.
+     *
+     * @return list<string> a list of ids that ended parking.
+     */
+    std::list<std::string> getEndedParking();
+
+private:
+
+    /**
+     * Stores the ids that started teleporting since the last time
+     * getStartedTeleporting() was called.
+     */
+    std::list<std::string> mStartedTeleporting;
+
+    /**
+     * Stores the ids that started parking since the last time
+     * getStartedParking() was called.
+     */
+    std::list<std::string> mStartedParking;
+
+    /**
+     * Stores the ids that ended Parking since the last time
+     * getEndedParking() was called.
+     */
+    std::list<std::string> mEndedParking;
+
+    /**
+     * Stores the pointer to the command interface.
+     */
+    std::shared_ptr<TraCICommandInterface> mCommandInterface;
+};
+
+} /* namespace Veins */
+
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_ */
