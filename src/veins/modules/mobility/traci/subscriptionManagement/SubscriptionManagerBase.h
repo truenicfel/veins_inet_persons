@@ -18,8 +18,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGERBASE_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGERBASE_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SUBSCRIPTIONMANAGERBASE_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SUBSCRIPTIONMANAGERBASE_H_
 
 #include <string>
 #include <set>
@@ -31,6 +31,7 @@
 
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class SubscriptionManagerBase {
 public:
@@ -144,6 +145,7 @@ private:
     std::shared_ptr<TraCICommandInterface> mCommandInterface;
 };
 
+} // end namespace TraCISubscriptionManagement
 } /* namespace Veins */
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGERBASE_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SUBSCRIPTIONMANAGERBASE_H_ */

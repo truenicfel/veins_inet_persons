@@ -18,15 +18,16 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_
 
 #include <string>
 
-#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
-#include "veins/modules/mobility/traci/TraCITrafficLight.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCITrafficLight.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class TrafficLightSubscriptionManager: public SubscriptionManagerBase {
 
@@ -74,6 +75,7 @@ private:
     std::list<TraCITrafficLight> mUpdatedTrafficLights;
 };
 
+} // end namespace TraCISubscriptionManagement
 } /* namespace Veins */
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRAFFICLIGHTSUBSCRIPTIONMANAGER_H_ */

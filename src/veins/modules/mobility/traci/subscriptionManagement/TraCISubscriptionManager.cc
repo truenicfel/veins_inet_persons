@@ -18,10 +18,11 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include "veins/modules/mobility/traci/TraCISubscriptionManager.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCISubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 TraCISubscriptionManager::TraCISubscriptionManager(bool explicitUpdateIfIdListSubscriptionUnavailable)
     : mConnection(nullptr)
@@ -143,7 +144,6 @@ void TraCISubscriptionManager::initialize(std::shared_ptr<TraCIConnection> conne
     mTrafficLightSubscriptionManager.initialize(connection, commandInterface);
 }
 
-
-
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 

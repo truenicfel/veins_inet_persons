@@ -18,10 +18,11 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include "veins/modules/mobility/traci/SimulationSubscriptionManager.h"
+#include <veins/modules/mobility/traci/subscriptionManagement/SimulationSubscriptionManager.h>
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 SimulationSubscriptionManager::SimulationSubscriptionManager()
     : SubscriptionManagerBase()
@@ -170,4 +171,5 @@ std::list<std::string> SimulationSubscriptionManager::getEndedParking() {
     return temp;
 }
 
+} // end namespace TraCISubscriptionManagement
 } /* namespace Veins */

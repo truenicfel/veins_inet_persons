@@ -18,14 +18,15 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SIMULATIONSUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SIMULATIONSUBSCRIPTIONMANAGER_H_
 
+#include <veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h>
 #include <list>
 
-#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class SimulationSubscriptionManager: public SubscriptionManagerBase {
 public:
@@ -116,6 +117,7 @@ private:
     std::list<std::string> mEndedParking;
 };
 
+} // end namespace TraCISubscriptionManagement
 } /* namespace Veins */
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SIMULATIONSUBSCRIPTIONMANAGER_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SIMULATIONSUBSCRIPTIONMANAGER_H_ */

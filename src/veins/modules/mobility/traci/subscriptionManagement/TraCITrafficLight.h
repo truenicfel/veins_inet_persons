@@ -18,14 +18,15 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_TRACITRAFFICLIGHT_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_TRACITRAFFICLIGHT_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACITRAFFICLIGHT_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACITRAFFICLIGHT_H_
 
 #include <string>
 
 #include "veins/veins.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 /**
  * @struct TraCITrafficLight
@@ -73,6 +74,7 @@ struct TraCITrafficLight {
     std::string redYellowGreenState;
 };
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACITRAFFICLIGHT_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACITRAFFICLIGHT_H_ */

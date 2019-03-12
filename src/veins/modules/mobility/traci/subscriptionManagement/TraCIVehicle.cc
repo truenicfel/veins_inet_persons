@@ -17,45 +17,37 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-
-#include "veins/modules/mobility/traci/TrafficParticipant.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIVehicle.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
-TrafficParticipant::TrafficParticipant(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
-    : mX(x)
-    , mY(y)
-    , mEdgeID(edgeID)
-    , mSpeed(speed)
-    , mAngle(angle)
-    , mID(id)
-    , mTypeID(typeID)
+TraCIVehicle::TraCIVehicle(double x, double y, std::string edgeID, double speed,
+        double angle, std::string id, std::string typeID, int signals, double length,
+        double height, double width)
+    : TrafficParticipant(x, y, edgeID, speed, angle, id, typeID)
+    , mSignals(signals)
+    , mLength(length)
+    , mHeight(height)
+    , mWidth(width)
 {
 }
 
-void TrafficParticipant::getPosition(double& x, double& y) {
-    x = mX;
-    y = mY;
+int TraCIVehicle::getSignals() {
+    return mSignals;
 }
 
-std::string TrafficParticipant::getEdgeID() {
-    return mEdgeID;
+double TraCIVehicle::getLength() {
+    return mLength;
 }
 
-double TrafficParticipant::getSpeed() {
-    return mSpeed;
+double TraCIVehicle::getHeight() {
+    return mHeight;
 }
 
-double TrafficParticipant::getAngle() {
-    return mAngle;
+double TraCIVehicle::getWidth() {
+    return mWidth;
 }
 
-std::string TrafficParticipant::getID() {
-    return mID;
-}
-
-std::string TrafficParticipant::getTypeID() {
-    return mTypeID;
-}
-
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins

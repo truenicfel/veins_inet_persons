@@ -18,17 +18,18 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_PERSONSUBSCRIPTIONMANAGER_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_PERSONSUBSCRIPTIONMANAGER_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_PERSONSUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_PERSONSUBSCRIPTIONMANAGER_H_
 
+#include <veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h>
+#include <veins/modules/mobility/traci/subscriptionManagement/TraCIPerson.h>
 #include <set>
 #include <string>
 #include <list>
 
-#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
-#include "veins/modules/mobility/traci/TraCIPerson.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class PersonSubscriptionManager: public SubscriptionManagerBase {
 public:
@@ -131,6 +132,7 @@ private:
     void subscribeToPersonVariables(std::string id);
 };
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_PERSONSUBSCRIPTIONMANAGER_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_PERSONSUBSCRIPTIONMANAGER_H_ */

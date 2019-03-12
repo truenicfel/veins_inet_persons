@@ -18,18 +18,19 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_VEHICLESUBSCRIPTIONMANAGER_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_VEHICLESUBSCRIPTIONMANAGER_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_VEHICLESUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_VEHICLESUBSCRIPTIONMANAGER_H_
 
 #include <set>
 #include <string>
 #include <list>
 #include <memory>
 
-#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
-#include "veins/modules/mobility/traci/TraCIVehicle.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIVehicle.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class VehicleSubscriptionManager: public SubscriptionManagerBase {
 public:
@@ -124,6 +125,7 @@ private:
 
 };
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_VEHICLESUBSCRIPTIONMANAGER_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_VEHICLESUBSCRIPTIONMANAGER_H_ */

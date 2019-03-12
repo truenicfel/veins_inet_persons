@@ -18,21 +18,22 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_TRACISUBSCRIPTIONMANAGER_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_TRACISUBSCRIPTIONMANAGER_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACISUBSCRIPTIONMANAGER_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACISUBSCRIPTIONMANAGER_H_
 
+#include "veins/modules/mobility/traci/subscriptionManagement/PersonSubscriptionManager.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/SimulationSubscriptionManager.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIPerson.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCITrafficLight.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIVehicle.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TrafficLightSubscriptionManager.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/VehicleSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIBuffer.h"
-#include "veins/modules/mobility/traci/TraCIPerson.h"
-#include "veins/modules/mobility/traci/TraCIVehicle.h"
-#include "veins/modules/mobility/traci/VehicleSubscriptionManager.h"
-#include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
-#include "veins/modules/mobility/traci/SimulationSubscriptionManager.h"
-#include "veins/modules/mobility/traci/TrafficLightSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
-#include "veins/modules/mobility/traci/TraCITrafficLight.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 /**
  * @class TraCISubscriptionManager
@@ -209,6 +210,7 @@ private:
 
 };
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACISUBSCRIPTIONMANAGER_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACISUBSCRIPTIONMANAGER_H_ */

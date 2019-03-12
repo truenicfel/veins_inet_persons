@@ -556,7 +556,7 @@ void TraCIScenarioManager::executeOneTimestep()
         subscriptionManager.processSubscriptionResult(buf);
 
         // vehicles first
-        std::list<TraCIVehicle> updatedVehicles = subscriptionManager.getUpdatedVehicles();
+        std::list<TraCISubscriptionManagement::TraCIVehicle> updatedVehicles = subscriptionManager.getUpdatedVehicles();
         EV_DEBUG << "Received " << updatedVehicles.size() << " vehicle updates!" << std::endl;
         processUpdatedVehicles(updatedVehicles);
         std::set<std::string> disappearedVehicles = subscriptionManager.getDisappearedVehicles();
@@ -568,7 +568,7 @@ void TraCIScenarioManager::executeOneTimestep()
         }
 
         // persons next
-        std::list<TraCIPerson> updatedPersons = subscriptionManager.getUpdatedPersons();
+        std::list<TraCISubscriptionManagement::TraCIPerson> updatedPersons = subscriptionManager.getUpdatedPersons();
         EV_DEBUG << "Received " << updatedPersons.size() << " person updates!" << std::endl;
         processUpdatedPersons(updatedPersons);
         std::set<std::string> disappearedPersons = subscriptionManager.getDisappearedPersons();
@@ -618,9 +618,9 @@ void TraCIScenarioManager::executeOneTimestep()
     if (!autoShutdownTriggered) scheduleAt(simTime() + updateInterval, executeOneTimestepTrigger);
 }
 
-void TraCIScenarioManager::processUpdatedVehicles(std::list<TraCIVehicle>& updatedVehicles)
+void TraCIScenarioManager::processUpdatedVehicles(std::list<TraCISubscriptionManagement::TraCIVehicle>& updatedVehicles)
 {
-    for (TraCIVehicle vehicle: updatedVehicles) {
+    for (TraCISubscriptionManagement::TraCIVehicle vehicle: updatedVehicles) {
 
         // Translate coordinates
         // ------------------------------
@@ -709,9 +709,9 @@ void TraCIScenarioManager::processUpdatedVehicles(std::list<TraCIVehicle>& updat
 
 }
 
-void TraCIScenarioManager::processUpdatedPersons(std::list<TraCIPerson>& updatedPersons)
+void TraCIScenarioManager::processUpdatedPersons(std::list<TraCISubscriptionManagement::TraCIPerson>& updatedPersons)
 {
-    for (TraCIPerson person: updatedPersons) {
+    for (TraCISubscriptionManagement::TraCIPerson person: updatedPersons) {
 
         // Translate coordinates
         // ------------------------------
@@ -800,8 +800,8 @@ void TraCIScenarioManager::processUpdatedPersons(std::list<TraCIPerson>& updated
 
 }
 
-void TraCIScenarioManager::processUpdatedTrafficLights(std::list<TraCITrafficLight>& updatedTrafficLights) {
-    for (TraCITrafficLight trafficLight: updatedTrafficLights) {
+void TraCIScenarioManager::processUpdatedTrafficLights(std::list<TraCISubscriptionManagement::TraCITrafficLight>& updatedTrafficLights) {
+    for (TraCISubscriptionManagement::TraCITrafficLight trafficLight: updatedTrafficLights) {
 
         // first get the module
         cModule* tlIfSubmodule = trafficLights[trafficLight.id]->getSubmodule("tlInterface");

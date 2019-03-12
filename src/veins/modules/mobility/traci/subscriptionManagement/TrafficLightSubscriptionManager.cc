@@ -18,12 +18,13 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
+#include <veins/modules/mobility/traci/subscriptionManagement/TrafficLightSubscriptionManager.h>
 #include "veins/veins.h"
 
-#include "veins/modules/mobility/traci/TrafficLightSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 TrafficLightSubscriptionManager::TrafficLightSubscriptionManager()
     : SubscriptionManagerBase()
@@ -147,4 +148,5 @@ bool TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
     return true;
 }
 
+} // end namespace TraCISubscriptionManagement
 } /* namespace Veins */

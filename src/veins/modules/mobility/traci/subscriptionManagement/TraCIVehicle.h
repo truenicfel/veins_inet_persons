@@ -18,12 +18,13 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_TRACIVEHICLE_H_
-#define SRC_VEINS_MODULES_MOBILITY_TRACI_TRACIVEHICLE_H_
+#ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACIVEHICLE_H_
+#define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACIVEHICLE_H_
 
-#include "veins/modules/mobility/traci/TrafficParticipant.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TrafficParticipant.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 class TraCIVehicle: public TrafficParticipant {
 
@@ -96,7 +97,8 @@ private:
     double mWidth;
 };
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 
-#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_TRACIVEHICLE_H_ */
+#endif /* SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_TRACIVEHICLE_H_ */
 

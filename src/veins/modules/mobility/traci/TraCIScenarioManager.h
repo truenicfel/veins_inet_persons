@@ -39,10 +39,10 @@
 #include "veins/modules/mobility/traci/TraCICoord.h"
 #include "veins/modules/mobility/traci/VehicleSignal.h"
 #include "veins/modules/mobility/traci/TraCIRegionOfInterest.h"
-#include "veins/modules/mobility/traci/TraCISubscriptionManager.h"
-#include "veins/modules/mobility/traci/TraCIVehicle.h"
-#include "veins/modules/mobility/traci/TraCIPerson.h"
-#include "veins/modules/mobility/traci/TraCITrafficLight.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIPerson.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCISubscriptionManager.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCITrafficLight.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIVehicle.h"
 
 namespace Veins {
 
@@ -146,7 +146,7 @@ protected:
     /**
      * Stores the subscription manager handling everything related to subscriptions.
      */
-    TraCISubscriptionManager subscriptionManager;
+    TraCISubscriptionManagement::TraCISubscriptionManager subscriptionManager;
 
     void executeOneTimestep(); /**< read and execute all commands for the next timestep */
 
@@ -178,7 +178,7 @@ protected:
      *
      * @param updatedVehicles the list of vehicles.
      */
-    void processUpdatedVehicles(std::list<TraCIVehicle>& updatedVehicles);
+    void processUpdatedVehicles(std::list<TraCISubscriptionManagement::TraCIVehicle>& updatedVehicles);
 
     /**
      * Helper method that takes a list of updated person and updates/adds
@@ -186,13 +186,13 @@ protected:
      *
      * @param updatedPersons the list of persons.
      */
-    void processUpdatedPersons(std::list<TraCIPerson>& updatedPersons);
+    void processUpdatedPersons(std::list<TraCISubscriptionManagement::TraCIPerson>& updatedPersons);
 
     /**
      * Helper method that takes a list of updated traffic lights and updates
      * the state of the traffic light modules.
      */
-    void processUpdatedTrafficLights(std::list<TraCITrafficLight>& updatedTrafficLights);
+    void processUpdatedTrafficLights(std::list<TraCISubscriptionManagement::TraCITrafficLight>& updatedTrafficLights);
 
 };
 

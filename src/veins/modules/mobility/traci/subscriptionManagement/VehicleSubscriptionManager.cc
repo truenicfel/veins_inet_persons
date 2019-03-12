@@ -18,47 +18,52 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
+#include "veins/modules/mobility/traci/subscriptionManagement/VehicleSubscriptionManager.h"
+
 #include <algorithm>
 
-#include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
-PersonSubscriptionManager::PersonSubscriptionManager()
+VehicleSubscriptionManager::VehicleSubscriptionManager()
     : SubscriptionManagerBase()
-    , mUpdatedPersons()
-    , mDisappearedPersons()
+    , mUpdatedVehicles()
+    , mDisappearedVehicles()
 {
 }
 
-bool PersonSubscriptionManager::updateWithList(std::list<std::string>& currentlyActivePersonIds) {
-    processPersonIDList(currentlyActivePersonIds);
-    return true;
+void VehicleSubscriptionManager::updateWithList(std::list<std::string>& currentlyActiveVehicleIds) {
+    processVehicleIDList(currentlyActiveVehicleIds);
 }
 
-bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
-
+bool VehicleSubscriptionManager::update(TraCIBuffer& buffer) {
     bool idListUpdateReceived = false;
 
     // this is the object id that this subscription result contains
-    // content about. for example a person id.
+    // content about. for example a vehicle id.
     std::string responseObjectID;
     buffer >> responseObjectID;
 
     // the number of response variables that are contained in this buffer
     uint8_t numberOfResponseVariables;
     buffer >> numberOfResponseVariables;
-    // this should either be one or five
-    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 5);
+    // this should either be one or nine
+    ASSERT(numberOfResponseVariables == 1 || numberOfResponseVariables == 9);
 
-    // these need to be filled (total of 5 variables --> x, y count as one)
+    // these need to be filled (total of 9 variables --> x, y count as one)
     double x;
     double y;
     double speed;
     std::string edge;
     double angle;
+    int signals;
+    double length;
+    double height;
+    double width;
     std::string typeID;
+
 
     for (int counter = 0; counter < numberOfResponseVariables; ++counter) {
 
@@ -77,30 +82,29 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
             // the status of the variable is ok
 
             // now check which variable id we got
-            // it is either an id_list or a subscription for a specific vehicle
+            // it is either an id_list or a subscription for a specific person
             // never both
             if (responseVariableID == TraCIConstants::ID_LIST) {
                 ASSERT(variableType == TraCIConstants::TYPE_STRINGLIST);
                 idListUpdateReceived = true;
 
-                uint32_t numberOfActivePersons;
-                buffer >> numberOfActivePersons;
-                EV_DEBUG << "TraCI reports " << numberOfActivePersons << " active persons."
-                                << endl;
+                uint32_t numberOfActiveVehicles;
+                buffer >> numberOfActiveVehicles;
+                EV_DEBUG << "TraCI reports " << numberOfActiveVehicles << " active vehicles." << endl;
 
                 // add all id strings of reported active persons to a set
-                std::list<std::string> traciActivePersons;
-                for (uint32_t counter = 0; counter < numberOfActivePersons; ++counter) {
+                std::list<std::string> traciActiveVehicles;
+                for (uint32_t counter = 0; counter < numberOfActiveVehicles; ++counter) {
                     std::string idstring;
                     buffer >> idstring;
-                    traciActivePersons.push_back(idstring);
+                    traciActiveVehicles.push_back(idstring);
                 }
 
                 // helper method takes care of this
-                processPersonIDList(traciActivePersons);
+                processVehicleIDList(traciActiveVehicles);
 
             } else {
-                // subscription for specific person
+                // subscription for specific vehicle
                 if (responseVariableID == TraCIConstants::VAR_POSITION) {
                     ASSERT(variableType == TraCIConstants::POSITION_2D);
                     buffer >> x;
@@ -114,11 +118,24 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
                 } else if (responseVariableID == TraCIConstants::VAR_ANGLE) {
                     ASSERT(variableType == TraCIConstants::TYPE_DOUBLE);
                     buffer >> angle;
+                } else if (responseVariableID == TraCIConstants::VAR_SIGNALS) {
+                    ASSERT(variableType == TraCIConstants::TYPE_INTEGER);
+                    buffer >> signals;
+                } else if (responseVariableID == TraCIConstants::VAR_LENGTH) {
+                    ASSERT(variableType == TraCIConstants::TYPE_DOUBLE);
+                    buffer >> length;
+                } else if (responseVariableID == TraCIConstants::VAR_HEIGHT) {
+                    ASSERT(variableType == TraCIConstants::TYPE_DOUBLE);
+                    buffer >> height;
+                } else if (responseVariableID == TraCIConstants::VAR_WIDTH) {
+                    ASSERT(variableType == TraCIConstants::TYPE_DOUBLE);
+                    buffer >> width;
                 } else if (responseVariableID == TraCIConstants::VAR_TYPE) {
                     ASSERT(variableType == TraCIConstants::TYPE_STRING);
                     buffer >> typeID;
-                }else {
-                    throw cRuntimeError("Received unknown person subscription result");
+                }
+                else {
+                    throw cRuntimeError("Received unknown vehicle subscription result");
                 }
             }
 
@@ -142,42 +159,39 @@ bool PersonSubscriptionManager::update(TraCIBuffer& buffer) {
 
     }
 
-    // make sure we are only entering this section if we got a person that we already subscribed to
+    // make sure we are only entering this section if we got a vehicle that we already subscribed to
     if (isSubscribed(responseObjectID)) {
-        // we want to deliver an update for this person for the next call to getUpdated()
-        TraCIPerson person(x, y, edge, speed, angle, responseObjectID, typeID);
-        mUpdatedPersons.push_back(person);
+        // we want to deliver an update for this vehicle for the next call to getUpdated()
+        TraCIVehicle vehicle(x, y, edge, speed, angle, responseObjectID, typeID, signals, length, height, width);
+        mUpdatedVehicles.push_back(vehicle);
     }
 
     return idListUpdateReceived;
 }
 
-std::list<TraCIPerson> PersonSubscriptionManager::getUpdated() {
-    std::list<TraCIPerson> temp = mUpdatedPersons;
-    mUpdatedPersons.clear();
+std::list<TraCIVehicle> VehicleSubscriptionManager::getUpdated() {
+    std::list<TraCIVehicle> temp = mUpdatedVehicles;
+    mUpdatedVehicles.clear();
     return temp;
 }
 
-std::set<std::string> PersonSubscriptionManager::getDisappeared() {
-    std::set<std::string> temp = mDisappearedPersons;
-    mDisappearedPersons.clear();
+std::set<std::string> VehicleSubscriptionManager::getDisappeared() {
+    std::set<std::string> temp = mDisappearedVehicles;
+    mDisappearedVehicles.clear();
     return temp;
 }
 
-void PersonSubscriptionManager::initialize(
-        std::shared_ptr<TraCIConnection> connection,
-        std::shared_ptr<TraCICommandInterface> commandInterface) {
-
-    // call base class
+void VehicleSubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
     SubscriptionManagerBase::initialize(connection, commandInterface);
 
-    // subscribe to list of person ids
+    // initialize subscriptions
+    // subscribe to list of vehicle ids
     simtime_t beginTime = 0;
     simtime_t endTime = SimTime::getMaxTime();
     std::string objectId = "";
     uint8_t variableNumber = 1;
     uint8_t variable1 = TraCIConstants::ID_LIST;
-    TraCIBuffer buf = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+    TraCIBuffer buf = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -188,62 +202,64 @@ void PersonSubscriptionManager::initialize(
     buf >> responseCommandLengthExtended;
     uint8_t responseCommandID;
     buf >> responseCommandID;
-    ASSERT(responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_PERSON_VARIABLE);
+    ASSERT(responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE);
 
     update(buf);
+
     ASSERT(buf.eof());
 
 }
 
-void PersonSubscriptionManager::processPersonIDList(std::list<std::string>& idList) {
+void VehicleSubscriptionManager::processVehicleIDList(std::list<std::string>& idList) {
 
     std::set<std::string> subscribed = getSubscribed();
 
-    // check for persons that need subscribing to
+    // check for vehicles that need subscribing to
     std::set<std::string> needSubscribe;
-    // basically: idList - getSubscribed()
-    // --> result is a list of persons that need to be subscribed
+    // basically: idList - mSubscribedVehicleIds
+    // --> result is a list of vehicles that need to be subscribed
     std::set_difference(idList.begin(), idList.end(),
             subscribed.begin(), subscribed.end(),
             std::inserter(needSubscribe, needSubscribe.begin()));
     for (auto id : needSubscribe) {
         addToSubscribed(id);
-        // the person will be automatically added to update
+        // the vehicle will be automatically added to update
         // after executing the following method
-        subscribeToPersonVariables(id);
+        subscribeToVehicleVariables(id);
     }
 
-    // check for persons that disappeared
-    // basically: getSubscribed - idList
-    // --> result is a list of persons that need to be unsubscribed
+    // check for vehicles that disappeared
+    // basically: mSubscribedVehicleIds - idList
+    // --> result is a list of vehicles that need to be unsubscribed
     std::set_difference(subscribed.begin(), subscribed.end(),
             idList.begin(), idList.end(),
-            std::inserter(mDisappearedPersons, mDisappearedPersons.begin()));
-    for (auto id : mDisappearedPersons) {
+            std::inserter(mDisappearedVehicles, mDisappearedVehicles.begin()));
+    for (auto id : mDisappearedVehicles) {
         if (isSubscribed(id)) {
             removeFromSubscribed(id);
         }
-        // there is no need to unsubscribe at TraCI: if a person disappears
+        // there is no need to unsubscribe at TraCI: if a vehicle disappears
         // the subscription will not be updated anyways
     }
-
 }
 
-void PersonSubscriptionManager::subscribeToPersonVariables(std::string id) {
-    // subscribe to some attributes of the person
+void VehicleSubscriptionManager::subscribeToVehicleVariables(std::string id) {
+    // subscribe to some attributes of the vehicle
     simtime_t beginTime = 0;
     simtime_t endTime = SimTime::getMaxTime();
     std::string objectId = id;
-    uint8_t variableNumber = 5;
+    uint8_t variableNumber = 9;
     uint8_t variable1 = TraCIConstants::VAR_POSITION;
     uint8_t variable2 = TraCIConstants::VAR_ROAD_ID;
     uint8_t variable3 = TraCIConstants::VAR_SPEED;
     uint8_t variable4 = TraCIConstants::VAR_ANGLE;
-    uint8_t variable5 = TraCIConstants::VAR_TYPE;
+    uint8_t variable5 = TraCIConstants::VAR_SIGNALS;
+    uint8_t variable6 = TraCIConstants::VAR_LENGTH;
+    uint8_t variable7 = TraCIConstants::VAR_HEIGHT;
+    uint8_t variable8 = TraCIConstants::VAR_WIDTH;
+    uint8_t variable9 = TraCIConstants::VAR_TYPE;
 
-    TraCIBuffer buffer = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE,
-            TraCIBuffer() << beginTime << endTime << objectId << variableNumber
-                    << variable1 << variable2 << variable3 << variable4 << variable5);
+    TraCIBuffer buffer = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7 << variable8 << variable9);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -254,11 +270,12 @@ void PersonSubscriptionManager::subscribeToPersonVariables(std::string id) {
     buffer >> responseCommandLengthExtended;
     uint8_t responseCommandID;
     buffer >> responseCommandID;
-    ASSERT(responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_PERSON_VARIABLE);
+    ASSERT(responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_VEHICLE_VARIABLE);
 
     update(buffer);
     ASSERT(buffer.eof());
 }
 
+} // end namespace TraCISubscriptionManagement
 } // end namespace Veins
 

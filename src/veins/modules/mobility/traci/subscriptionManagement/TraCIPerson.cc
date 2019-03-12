@@ -18,15 +18,17 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include "veins/modules/mobility/traci/TraCIPerson.h"
+#include "veins/modules/mobility/traci/subscriptionManagement/TraCIPerson.h"
 
 namespace Veins {
+namespace TraCISubscriptionManagement {
 
 TraCIPerson::TraCIPerson(double x, double y, std::string edgeID, double speed, double angle, std::string id, std::string typeID)
     : TrafficParticipant(x, y, edgeID, speed, angle, id, typeID)
 {
 }
 
+} // end namespace TraCISubscriptionManagement
 }
 
 
