@@ -26,15 +26,13 @@
 namespace Veins {
 
 VehicleSubscriptionManager::VehicleSubscriptionManager()
-    : mSubscribedVehicleIds()
+    : SubscriptionManagerBase()
     , mUpdatedVehicles()
     , mDisappearedVehicles()
-    , mConnection(nullptr)
-    , mCommandInterface(nullptr)
 {
 }
 
-void VehicleSubscriptionManager::update(std::list<std::string>& currentlyActiveVehicleIds) {
+void VehicleSubscriptionManager::updateWithList(std::list<std::string>& currentlyActiveVehicleIds) {
     processVehicleIDList(currentlyActiveVehicleIds);
 }
 
@@ -182,8 +180,7 @@ std::set<std::string> VehicleSubscriptionManager::getDisappeared() {
 }
 
 void VehicleSubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
-    mConnection = connection;
-    mCommandInterface = commandInterface;
+    SubscriptionManagerBase::initialize(connection, commandInterface);
 
     // initialize subscriptions
     // subscribe to list of vehicle ids
@@ -192,7 +189,7 @@ void VehicleSubscriptionManager::initialize(std::shared_ptr<TraCIConnection> con
     std::string objectId = "";
     uint8_t variableNumber = 1;
     uint8_t variable1 = TraCIConstants::ID_LIST;
-    TraCIBuffer buf = mConnection->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+    TraCIBuffer buf = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -213,15 +210,17 @@ void VehicleSubscriptionManager::initialize(std::shared_ptr<TraCIConnection> con
 
 void VehicleSubscriptionManager::processVehicleIDList(std::list<std::string>& idList) {
 
+    std::set<std::string> subscribed = getSubscribed();
+
     // check for vehicles that need subscribing to
     std::set<std::string> needSubscribe;
     // basically: idList - mSubscribedVehicleIds
     // --> result is a list of vehicles that need to be subscribed
     std::set_difference(idList.begin(), idList.end(),
-            mSubscribedVehicleIds.begin(), mSubscribedVehicleIds.end(),
+            subscribed.begin(), subscribed.end(),
             std::inserter(needSubscribe, needSubscribe.begin()));
     for (auto id : needSubscribe) {
-        mSubscribedVehicleIds.insert(id);
+        addToSubscribed(id);
         // the vehicle will be automatically added to update
         // after executing the following method
         subscribeToVehicleVariables(id);
@@ -230,12 +229,12 @@ void VehicleSubscriptionManager::processVehicleIDList(std::list<std::string>& id
     // check for vehicles that disappeared
     // basically: mSubscribedVehicleIds - idList
     // --> result is a list of vehicles that need to be unsubscribed
-    std::set_difference(mSubscribedVehicleIds.begin(), mSubscribedVehicleIds.end(),
+    std::set_difference(subscribed.begin(), subscribed.end(),
             idList.begin(), idList.end(),
             std::inserter(mDisappearedVehicles, mDisappearedVehicles.begin()));
     for (auto id : mDisappearedVehicles) {
         if (isSubscribed(id)) {
-            mSubscribedVehicleIds.erase(id);
+            removeFromSubscribed(id);
         }
         // there is no need to unsubscribe at TraCI: if a vehicle disappears
         // the subscription will not be updated anyways
@@ -258,7 +257,7 @@ void VehicleSubscriptionManager::subscribeToVehicleVariables(std::string id) {
     uint8_t variable8 = TraCIConstants::VAR_WIDTH;
     uint8_t variable9 = TraCIConstants::VAR_TYPE;
 
-    TraCIBuffer buffer = mConnection->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7 << variable8 << variable9);
+    TraCIBuffer buffer = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_VEHICLE_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4 << variable5 << variable6 << variable7 << variable8 << variable9);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -273,10 +272,6 @@ void VehicleSubscriptionManager::subscribeToVehicleVariables(std::string id) {
 
     update(buffer);
     ASSERT(buffer.eof());
-}
-
-bool VehicleSubscriptionManager::isSubscribed(std::string id) {
-    return mSubscribedVehicleIds.find(id) != mSubscribedVehicleIds.end();
 }
 
 } // end namespace Veins

@@ -25,14 +25,12 @@
 #include <string>
 #include <list>
 
+#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
 #include "veins/modules/mobility/traci/TraCIPerson.h"
-#include "veins/modules/mobility/traci/TraCIConnection.h"
-#include "veins/modules/mobility/traci/TraCICommandInterface.h"
-#include "veins/modules/mobility/traci/TraCIBuffer.h"
 
 namespace Veins {
 
-class PersonSubscriptionManager {
+class PersonSubscriptionManager: public SubscriptionManagerBase {
 public:
     /**
      * Constructor.
@@ -54,7 +52,7 @@ public:
      *
      * @return true
      */
-    bool update(std::list<std::string>& currentlyActivePersonIds);
+    bool updateWithList(std::list<std::string>& currentlyActivePersonIds);
 
     /**
      * Update this manager with the given buffer containing a subscription
@@ -67,7 +65,7 @@ public:
      *
      * @return bool true if the given buffer contained an ID_LIST response.
      */
-    bool update(TraCIBuffer& buffer);
+    bool update(TraCIBuffer& buffer) override;
 
     /**
      * This gives you all the persons that were updated (includes
@@ -93,14 +91,9 @@ public:
     /**
      * Initialize this manager with the given parameters to access TraCI.
      */
-    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) override;
 
 private:
-
-    /**
-     * This stores all the subscribed person ids.
-     */
-    std::set<std::string> mSubscribedPersonIds;
 
     /**
      * This contains all updated persons. Will be cleared after
@@ -116,16 +109,6 @@ private:
      * mActivePersons but not in currently active person ids.
      */
     std::set<std::string> mDisappearedPersons;
-
-    /**
-     * The connection to the TraCI server.
-     */
-    std::shared_ptr<TraCIConnection> mConnection;
-
-    /**
-     * The command interface to the TraCI server.
-     */
-    std::shared_ptr<TraCICommandInterface> mCommandInterface;
 
     /**
      * Get the active person id set.
@@ -146,13 +129,6 @@ private:
      * @param id the id of the person.
      */
     void subscribeToPersonVariables(std::string id);
-
-    /**
-     * True if this person is subscribed.
-     *
-     * @param id of the person to check.
-     */
-    bool isSubscribed(std::string id);
 };
 
 } // end namespace Veins

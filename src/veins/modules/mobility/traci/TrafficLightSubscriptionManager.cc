@@ -26,10 +26,8 @@
 namespace Veins {
 
 TrafficLightSubscriptionManager::TrafficLightSubscriptionManager()
-    : mUpdatedTrafficLights()
-    , mSubscribedTrafficLights()
-    , mConnection(nullptr)
-    , mCommandInterface(nullptr)
+    : SubscriptionManagerBase()
+    , mUpdatedTrafficLights()
 {
 }
 
@@ -43,7 +41,7 @@ void TrafficLightSubscriptionManager::subscribeToTrafficLight(std::string id) {
     uint8_t variable3 = TraCIConstants::TL_NEXT_SWITCH;
     uint8_t variable4 = TraCIConstants::TL_RED_YELLOW_GREEN_STATE;
 
-    TraCIBuffer buffer = mConnection->query(TraCIConstants::CMD_SUBSCRIBE_TL_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4);
+    TraCIBuffer buffer = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_TL_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -61,7 +59,7 @@ void TrafficLightSubscriptionManager::subscribeToTrafficLight(std::string id) {
     ASSERT(buffer.eof());
 
     // everything fine so add to subscribed
-    mSubscribedTrafficLights.insert(id);
+    addToSubscribed(id);
 }
 
 std::list<TraCITrafficLight> TrafficLightSubscriptionManager::getUpdated() {
@@ -70,12 +68,7 @@ std::list<TraCITrafficLight> TrafficLightSubscriptionManager::getUpdated() {
     return temp;
 }
 
-void TrafficLightSubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
-    mConnection = connection;
-    mCommandInterface = commandInterface;
-}
-
-void TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
+bool TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
     // this is the object id that this subscription result contains
     // content about. in this case we expect a traffic light id.
     std::string responseObjectID;
@@ -115,7 +108,7 @@ void TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
                 break;
 
             case TraCIConstants::TL_NEXT_SWITCH:
-                trafficLight.nextSwitch = buffer.readTypeChecked<simtime_t>(mCommandInterface->getTimeType());
+                trafficLight.nextSwitch = buffer.readTypeChecked<simtime_t>(getCommandInterface()->getTimeType());
 
                 break;
 
@@ -150,10 +143,8 @@ void TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
 
     trafficLight.id = responseObjectID;
     mUpdatedTrafficLights.push_back(trafficLight);
-}
 
-bool TrafficLightSubscriptionManager::isSubscribed(std::string id) {
-    return mSubscribedTrafficLights.find(id) != mSubscribedTrafficLights.end();
+    return true;
 }
 
 } /* namespace Veins */

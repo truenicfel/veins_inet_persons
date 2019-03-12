@@ -26,15 +26,13 @@
 namespace Veins {
 
 PersonSubscriptionManager::PersonSubscriptionManager()
-    : mSubscribedPersonIds()
+    : SubscriptionManagerBase()
     , mUpdatedPersons()
     , mDisappearedPersons()
-    , mConnection(nullptr)
-    , mCommandInterface(nullptr)
 {
 }
 
-bool PersonSubscriptionManager::update(std::list<std::string>& currentlyActivePersonIds) {
+bool PersonSubscriptionManager::updateWithList(std::list<std::string>& currentlyActivePersonIds) {
     processPersonIDList(currentlyActivePersonIds);
     return true;
 }
@@ -169,8 +167,9 @@ std::set<std::string> PersonSubscriptionManager::getDisappeared() {
 void PersonSubscriptionManager::initialize(
         std::shared_ptr<TraCIConnection> connection,
         std::shared_ptr<TraCICommandInterface> commandInterface) {
-    mConnection = connection;
-    mCommandInterface = commandInterface;
+
+    // call base class
+    SubscriptionManagerBase::initialize(connection, commandInterface);
 
     // subscribe to list of person ids
     simtime_t beginTime = 0;
@@ -178,7 +177,7 @@ void PersonSubscriptionManager::initialize(
     std::string objectId = "";
     uint8_t variableNumber = 1;
     uint8_t variable1 = TraCIConstants::ID_LIST;
-    TraCIBuffer buf = mConnection->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
+    TraCIBuffer buf = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1);
 
     // remove unnecessary stuff from buffer
     uint8_t responseCommandLength;
@@ -198,29 +197,31 @@ void PersonSubscriptionManager::initialize(
 
 void PersonSubscriptionManager::processPersonIDList(std::list<std::string>& idList) {
 
+    std::set<std::string> subscribed = getSubscribed();
+
     // check for persons that need subscribing to
     std::set<std::string> needSubscribe;
-    // basically: idList - mSubscribedPersonIds
+    // basically: idList - getSubscribed()
     // --> result is a list of persons that need to be subscribed
     std::set_difference(idList.begin(), idList.end(),
-            mSubscribedPersonIds.begin(), mSubscribedPersonIds.end(),
+            subscribed.begin(), subscribed.end(),
             std::inserter(needSubscribe, needSubscribe.begin()));
     for (auto id : needSubscribe) {
-        mSubscribedPersonIds.insert(id);
+        addToSubscribed(id);
         // the person will be automatically added to update
         // after executing the following method
         subscribeToPersonVariables(id);
     }
 
     // check for persons that disappeared
-    // basically: mSubscribedPersonIds - idList
+    // basically: getSubscribed - idList
     // --> result is a list of persons that need to be unsubscribed
-    std::set_difference(mSubscribedPersonIds.begin(), mSubscribedPersonIds.end(),
+    std::set_difference(subscribed.begin(), subscribed.end(),
             idList.begin(), idList.end(),
             std::inserter(mDisappearedPersons, mDisappearedPersons.begin()));
     for (auto id : mDisappearedPersons) {
         if (isSubscribed(id)) {
-            mSubscribedPersonIds.erase(id);
+            removeFromSubscribed(id);
         }
         // there is no need to unsubscribe at TraCI: if a person disappears
         // the subscription will not be updated anyways
@@ -240,7 +241,7 @@ void PersonSubscriptionManager::subscribeToPersonVariables(std::string id) {
     uint8_t variable4 = TraCIConstants::VAR_ANGLE;
     uint8_t variable5 = TraCIConstants::VAR_TYPE;
 
-    TraCIBuffer buffer = mConnection->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE,
+    TraCIBuffer buffer = getConnection()->query(TraCIConstants::CMD_SUBSCRIBE_PERSON_VARIABLE,
             TraCIBuffer() << beginTime << endTime << objectId << variableNumber
                     << variable1 << variable2 << variable3 << variable4 << variable5);
 
@@ -257,10 +258,6 @@ void PersonSubscriptionManager::subscribeToPersonVariables(std::string id) {
 
     update(buffer);
     ASSERT(buffer.eof());
-}
-
-bool PersonSubscriptionManager::isSubscribed(std::string id) {
-    return mSubscribedPersonIds.find(id) != mSubscribedPersonIds.end();
 }
 
 } // end namespace Veins

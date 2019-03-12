@@ -80,13 +80,13 @@ void TraCISubscriptionManager::processSubscriptionResult(TraCIBuffer& buffer) {
     if (!receivedPersonIDListSubscription && mExplicitUpdateIfIdListSubscriptionUnavailable) {
         Veins::TraCICommandInterface::Person defaultPerson = mCommandInterface->person("");
         std::list<std::string> idList = defaultPerson.getIdList();
-        mPersonSubscriptionManager.update(idList);
+        mPersonSubscriptionManager.updateWithList(idList);
     }
     // if there was no vehicle id list received we perform a manual update
     if (!receivedVehicleIDListSubscription && mExplicitUpdateIfIdListSubscriptionUnavailable) {
         Veins::TraCICommandInterface::Vehicle defaultVehicle = mCommandInterface->vehicle("");
         std::list<std::string> idList = defaultVehicle.getIdList();
-        mVehicleSubscriptionManager.update(idList);
+        mVehicleSubscriptionManager.updateWithList(idList);
     }
 
     ASSERT(buffer.eof());

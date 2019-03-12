@@ -24,25 +24,28 @@
 namespace Veins {
 
 SimulationSubscriptionManager::SimulationSubscriptionManager()
-    : mStartedTeleporting()
+    : SubscriptionManagerBase()
+    , mStartedTeleporting()
+    , mStartedParking()
+    , mEndedParking()
 {
 }
 
 void SimulationSubscriptionManager::initialize(
         std::shared_ptr<TraCIConnection> connection,
         std::shared_ptr<TraCICommandInterface> commandInterface) {
-    mCommandInterface = commandInterface;
+    SubscriptionManagerBase::initialize(connection, commandInterface);
 
     // subscribe to list of departed and arrived vehicles, as well as simulation time
     simtime_t beginTime = 0;
     simtime_t endTime = SimTime::getMaxTime();
     std::string objectId = "";
     uint8_t variableNumber = 4;
-    uint8_t variable1 = mCommandInterface->getTimeStepCmd();
+    uint8_t variable1 = getCommandInterface()->getTimeStepCmd();
     uint8_t variable2 = TraCIConstants::VAR_TELEPORT_STARTING_VEHICLES_IDS;
     uint8_t variable3 = TraCIConstants::VAR_PARKING_STARTING_VEHICLES_IDS;
     uint8_t variable4 = TraCIConstants::VAR_PARKING_ENDING_VEHICLES_IDS;
-    TraCIBuffer buffer = connection->query(
+    TraCIBuffer buffer = getConnection()->query(
             TraCIConstants::CMD_SUBSCRIBE_SIM_VARIABLE,
             TraCIBuffer() << beginTime << endTime << objectId << variableNumber
                     << variable1 << variable2 << variable3 << variable4);
@@ -63,7 +66,7 @@ void SimulationSubscriptionManager::initialize(
     ASSERT(buffer.eof());
 }
 
-void SimulationSubscriptionManager::update(TraCIBuffer& buffer) {
+bool SimulationSubscriptionManager::update(TraCIBuffer& buffer) {
 
     // this is the object id that this subscription result contains
     // content about. this is not used for this subscription.
@@ -132,10 +135,10 @@ void SimulationSubscriptionManager::update(TraCIBuffer& buffer) {
                 buffer >> idstring;
                 mEndedParking.push_back(idstring);
             }
-        } else if (variable1_resp == mCommandInterface->getTimeStepCmd()) {
+        } else if (variable1_resp == getCommandInterface()->getTimeStepCmd()) {
             uint8_t varType;
             buffer >> varType;
-            ASSERT(varType == mCommandInterface->getTimeType());
+            ASSERT(varType == getCommandInterface()->getTimeType());
             simtime_t serverTimestep;
             buffer >> serverTimestep;
             EV_DEBUG << "TraCI reports current time step as " << serverTimestep
@@ -146,7 +149,7 @@ void SimulationSubscriptionManager::update(TraCIBuffer& buffer) {
             throw cRuntimeError("Received unhandled simulation subscription result");
         }
     }
-
+    return true;
 }
 
 std::list<std::string> SimulationSubscriptionManager::getStartedTeleporting() {

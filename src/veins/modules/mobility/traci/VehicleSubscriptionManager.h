@@ -26,14 +26,12 @@
 #include <list>
 #include <memory>
 
+#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
-#include "veins/modules/mobility/traci/TraCIConnection.h"
-#include "veins/modules/mobility/traci/TraCICommandInterface.h"
-#include "veins/modules/mobility/traci/TraCIBuffer.h"
 
 namespace Veins {
 
-class VehicleSubscriptionManager {
+class VehicleSubscriptionManager: public SubscriptionManagerBase {
 public:
     /**
      * Constructor.
@@ -53,7 +51,7 @@ public:
      * @param currentlyActiveVehicleIds A list containing the currently active
      * vehicles identified by their ids.
      */
-    void update(std::list<std::string>& currentlyActiveVehicleIds);
+    void updateWithList(std::list<std::string>& currentlyActiveVehicleIds);
 
     /**
      * Update this manager with the given buffer containing a subscription
@@ -97,11 +95,6 @@ public:
 private:
 
     /**
-     * This stores all the subscribed vehicle ids.
-     */
-    std::set<std::string> mSubscribedVehicleIds;
-
-    /**
      * This contains all updated vehicles. Will be cleared after
      * getUpdated() was called.
      */
@@ -117,16 +110,6 @@ private:
     std::set<std::string> mDisappearedVehicles;
 
     /**
-     * The connection to the TraCI server.
-     */
-    std::shared_ptr<TraCIConnection> mConnection;
-
-    /**
-     * The command interface to the TraCI server.
-     */
-    std::shared_ptr<TraCICommandInterface> mCommandInterface;
-
-    /**
      * Process a subscription result that contains an id list. This is
      * simply a helper method to improve clarity of update().
      */
@@ -139,12 +122,6 @@ private:
      */
     void subscribeToVehicleVariables(std::string id);
 
-    /**
-     * True if this vehicle is subscribed.
-     *
-     * @param id the id of the vehicle to check if it is subscribed.
-     */
-    bool isSubscribed(std::string id);
 };
 
 } // end namespace Veins

@@ -23,18 +23,20 @@
 
 #include <list>
 
-#include "veins/modules/mobility/traci/TraCIConnection.h"
-#include "veins/modules/mobility/traci/TraCICommandInterface.h"
-#include "veins/modules/mobility/traci/TraCIBuffer.h"
+#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
 
 namespace Veins {
 
-class SimulationSubscriptionManager {
+class SimulationSubscriptionManager: public SubscriptionManagerBase {
 public:
+
+    /**
+     * Constructor.
+     */
     SimulationSubscriptionManager();
 
     /**
-     *
+     * Default destructor.
      */
     virtual ~SimulationSubscriptionManager() = default;
 
@@ -47,16 +49,18 @@ public:
      * @param connection shared ptr to connection to traci server.
      * @param commmandInterface shared pointer to command interface to traci server.
      */
-    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
+    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) override;
 
     /**
      * Update this subscription manager with the given TraCIBuffer. After a call to
      * this the getter of this class will be updated and return different results than
      * before the call to update().
      *
-     *@param buffer the buffer containing the subscription result.
+     * @param buffer the buffer containing the subscription result.
+     *
+     * @return true (default)
      */
-    void update(TraCIBuffer& buffer);
+    bool update(TraCIBuffer& buffer) override;
 
     /**
      * Get the ids of vehicles that started teleporting since
@@ -110,11 +114,6 @@ private:
      * getEndedParking() was called.
      */
     std::list<std::string> mEndedParking;
-
-    /**
-     * Stores the pointer to the command interface.
-     */
-    std::shared_ptr<TraCICommandInterface> mCommandInterface;
 };
 
 } /* namespace Veins */

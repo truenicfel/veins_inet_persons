@@ -23,15 +23,15 @@
 
 #include <string>
 
-#include "veins/modules/mobility/traci/TraCIConnection.h"
-#include "veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "veins/modules/mobility/traci/SubscriptionManagerBase.h"
 #include "veins/modules/mobility/traci/TraCITrafficLight.h"
-#include "veins/modules/mobility/traci/TraCIBuffer.h"
 
 namespace Veins {
 
-class TrafficLightSubscriptionManager {
+class TrafficLightSubscriptionManager: public SubscriptionManagerBase {
+
 public:
+
     /**
      * Constructor.
      */
@@ -43,20 +43,14 @@ public:
     virtual ~TrafficLightSubscriptionManager() = default;
 
     /**
-     * Initialize this manager with the given parameters to access TraCI.
-     *
-     * @param connection to access traci
-     * @param commandInterface to access traci
-     */
-    void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
-
-    /**
      * Update this manager with the given buffer. The next call
      * to getTrafficLightUpdates() will change after a call to this.
      *
      * @param buffer the buffer containing the subscription information.
+     *
+     * @return true (default)
      */
-    void update(TraCIBuffer& buffer);
+    bool update(TraCIBuffer& buffer);
 
     /**
      * Subscribe to a specific traffic light.
@@ -78,26 +72,6 @@ private:
      * getTrafficLightUpdates() got called.
      */
     std::list<TraCITrafficLight> mUpdatedTrafficLights;
-
-    /**
-     * A set of subscribed traffic lights identified by their id.
-     */
-    std::set<std::string> mSubscribedTrafficLights;
-
-    /**
-     * Stores connection to access TraCI.
-     */
-    std::shared_ptr<TraCIConnection> mConnection;
-
-    /**
-     * Stores command interface to access TraCI.
-     */
-    std::shared_ptr<TraCICommandInterface> mCommandInterface;
-
-    /**
-     * Check if the given id is subscribed.
-     */
-    bool isSubscribed(std::string id);
 };
 
 } /* namespace Veins */
