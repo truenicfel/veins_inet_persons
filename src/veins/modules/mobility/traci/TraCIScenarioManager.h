@@ -194,6 +194,12 @@ protected:
      */
     void processUpdatedTrafficLights(std::list<TraCISubscriptionManagement::TraCITrafficLight>& updatedTrafficLights);
 
+    /**
+     * Helper method that takes the response buffer of a simstep command and
+     * calls the subscription manager and updates modules according to results.
+     */
+    void processSubscriptions(TraCIBuffer& buffer);
+
 };
 
 class VEINS_API TraCIScenarioManagerAccess {

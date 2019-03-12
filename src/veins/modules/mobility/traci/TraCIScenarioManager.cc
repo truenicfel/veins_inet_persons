@@ -552,70 +552,74 @@ void TraCIScenarioManager::executeOneTimestep()
     emit(traciTimestepBeginSignal, targetTime);
 
     if (isConnected()) {
-        TraCIBuffer buf = connection->query(CMD_SIMSTEP2, TraCIBuffer() << targetTime);
-        subscriptionManager.processSubscriptionResult(buf);
-
-        // vehicles first
-        std::list<TraCISubscriptionManagement::TraCIVehicle> updatedVehicles = subscriptionManager.getUpdatedVehicles();
-        EV_DEBUG << "Received " << updatedVehicles.size() << " vehicle updates!" << std::endl;
-        processUpdatedVehicles(updatedVehicles);
-        std::set<std::string> disappearedVehicles = subscriptionManager.getDisappearedVehicles();
-        for (auto vehicleID : disappearedVehicles) {
-            // check if this object has been deleted already (e.g. because it was outside the ROI)
-            cModule* mod = getManagedModule(vehicleID);
-            if (mod) deleteManagedModule(vehicleID);
-            EV_DEBUG << "Unsubscribed to vehicle with id " << vehicleID << std::endl;
-        }
-
-        // persons next
-        std::list<TraCISubscriptionManagement::TraCIPerson> updatedPersons = subscriptionManager.getUpdatedPersons();
-        EV_DEBUG << "Received " << updatedPersons.size() << " person updates!" << std::endl;
-        processUpdatedPersons(updatedPersons);
-        std::set<std::string> disappearedPersons = subscriptionManager.getDisappearedPersons();
-        for (auto personID : disappearedPersons) {
-            // check if this object has been deleted already (e.g. because it was outside the ROI)
-            cModule* mod = getManagedModule(personID);
-            if (mod) deleteManagedModule(personID);
-            EV_DEBUG << "Unsubscribed to person with id " << personID << std::endl;
-        }
-
-        // simulation next
-
-        // remove all modules that are currently teleporting (they will be added automatically again)
-        for (auto id: subscriptionManager.getStartedTeleporting()) {
-            // check if this object has been deleted already (e.g. because it was outside the ROI)
-            cModule* mod = getManagedModule(id);
-            if (mod) deleteManagedModule(id);
-            EV_DEBUG << "Person with " << id << " started teleporting." << std::endl;
-        }
-
-        // change parking state of all cars that started parking
-        for (auto id: subscriptionManager.getStartedParking()) {
-            cModule* mod = getManagedModule(id);
-            auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
-            for (auto mm : mobilityModules) {
-                mm->changeParkingState(true);
-            }
-        }
-
-        // change parking state of all cars that stopped parking
-        for (auto id: subscriptionManager.getEndedParking()) {
-            cModule* mod = getManagedModule(id);
-            auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
-            for (auto mm : mobilityModules) {
-                mm->changeParkingState(false);
-            }
-        }
-
-        // last traffic lights
-
-
-
+        TraCIBuffer buffer = connection->query(CMD_SIMSTEP2, TraCIBuffer() << targetTime);
+        processSubscriptions(buffer);
     }
 
     emit(traciTimestepEndSignal, targetTime);
 
     if (!autoShutdownTriggered) scheduleAt(simTime() + updateInterval, executeOneTimestepTrigger);
+}
+
+void TraCIScenarioManager::processSubscriptions(TraCIBuffer& buffer) {
+    subscriptionManager.processSubscriptionResult(buffer);
+
+    // vehicles first
+    std::list<TraCISubscriptionManagement::TraCIVehicle> updatedVehicles = subscriptionManager.getUpdatedVehicles();
+    EV_DEBUG << "Received " << updatedVehicles.size() << " vehicle updates!" << std::endl;
+    processUpdatedVehicles(updatedVehicles);
+    std::set<std::string> disappearedVehicles = subscriptionManager.getDisappearedVehicles();
+    for (auto vehicleID : disappearedVehicles) {
+        // check if this object has been deleted already (e.g. because it was outside the ROI)
+        cModule* mod = getManagedModule(vehicleID);
+        if (mod) deleteManagedModule(vehicleID);
+        EV_DEBUG << "Unsubscribed to vehicle with id " << vehicleID << std::endl;
+    }
+
+    // persons next
+    std::list<TraCISubscriptionManagement::TraCIPerson> updatedPersons = subscriptionManager.getUpdatedPersons();
+    EV_DEBUG << "Received " << updatedPersons.size() << " person updates!" << std::endl;
+    processUpdatedPersons(updatedPersons);
+    std::set<std::string> disappearedPersons = subscriptionManager.getDisappearedPersons();
+    for (auto personID : disappearedPersons) {
+        // check if this object has been deleted already (e.g. because it was outside the ROI)
+        cModule* mod = getManagedModule(personID);
+        if (mod) deleteManagedModule(personID);
+        EV_DEBUG << "Unsubscribed to person with id " << personID << std::endl;
+    }
+
+    // simulation next
+
+    // remove all modules that are currently teleporting (they will be added automatically again)
+    for (auto id: subscriptionManager.getStartedTeleporting()) {
+        // check if this object has been deleted already (e.g. because it was outside the ROI)
+        cModule* mod = getManagedModule(id);
+        if (mod) deleteManagedModule(id);
+        EV_DEBUG << "Person with " << id << " started teleporting." << std::endl;
+    }
+
+    // change parking state of all cars that started parking
+    for (auto id: subscriptionManager.getStartedParking()) {
+        cModule* mod = getManagedModule(id);
+        auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
+        for (auto mm : mobilityModules) {
+            mm->changeParkingState(true);
+        }
+    }
+
+    // change parking state of all cars that stopped parking
+    for (auto id: subscriptionManager.getEndedParking()) {
+        cModule* mod = getManagedModule(id);
+        auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
+        for (auto mm : mobilityModules) {
+            mm->changeParkingState(false);
+        }
+    }
+
+    // last traffic lights
+    std::list<TraCISubscriptionManagement::TraCITrafficLight> trafficLightUpdates = subscriptionManager.getTrafficLightUpdates();
+    processUpdatedTrafficLights(trafficLightUpdates);
+
 }
 
 void TraCIScenarioManager::processUpdatedVehicles(std::list<TraCISubscriptionManagement::TraCIVehicle>& updatedVehicles)

@@ -92,9 +92,6 @@ bool TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
         // - status of the variable
         uint8_t variableStatus;
         buffer >> variableStatus;
-        // - type of the variable
-        uint8_t variableType;
-        buffer >> variableType;
 
         // check ok
         if (variableStatus == TraCIConstants::RTYPE_OK) {
@@ -123,6 +120,9 @@ bool TrafficLightSubscriptionManager::update(TraCIBuffer& buffer) {
             }
 
         } else {
+            // - type of the variable
+            uint8_t variableType;
+            buffer >> variableType;
             // the status of the variable is not ok
             ASSERT(variableType == TraCIConstants::TYPE_STRING);
             std::string errormsg;
