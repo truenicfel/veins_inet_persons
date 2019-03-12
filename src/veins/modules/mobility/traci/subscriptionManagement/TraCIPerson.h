@@ -31,6 +31,8 @@ namespace TraCISubscriptionManagement {
  *
  * TraCIPerson is nothing more than a simple TrafficParticipant
  * but can be extended in the future.
+ *
+ * @author Nico Dassler <dassler@hm.edu>
  */
 class TraCIPerson: public TrafficParticipant {
 

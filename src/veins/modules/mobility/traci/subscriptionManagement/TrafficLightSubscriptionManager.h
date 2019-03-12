@@ -29,6 +29,16 @@
 namespace Veins {
 namespace TraCISubscriptionManagement {
 
+/**
+ * @class TrafficLightSubscriptionManager
+ *
+ * This subscribes to specific TrafficLights (method: subscribeToTrafficLight()) and
+ * publishes the results of these subscriptions.
+ *
+ * IMPORTANT: Call initialize() before using!
+ *
+ * @author Nico Dassler <dassler@hm.edu>
+ */
 class TrafficLightSubscriptionManager: public SubscriptionManagerBase {
 
 public:

@@ -32,6 +32,8 @@ namespace TraCISubscriptionManagement {
  * Provides a basic interface to variables that each traffic
  * participant shares. Extend this to add variables
  * for specific participants like cars, bikes, pedestrians etc.
+ *
+ * @author Nico Dassler <dassler@hm.edu>
  */
 class TrafficParticipant {
 

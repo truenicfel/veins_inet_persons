@@ -26,6 +26,14 @@
 namespace Veins {
 namespace TraCISubscriptionManagement {
 
+/**
+ * @class TraCIVehicle
+ *
+ * Extends the TrafficParticipant definition by a couple of properties
+ * of the vehicle like length, height and width.
+ *
+ * @author Nico Dassler <dassler@hm.edu>
+ */
 class TraCIVehicle: public TrafficParticipant {
 
 public:

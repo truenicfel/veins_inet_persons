@@ -34,6 +34,7 @@ namespace TraCISubscriptionManagement {
  * Simple definition of a traffic light as data
  * exchange format.
  *
+ * @author Nico Dassler <dassler@hm.edu>
  */
 struct TraCITrafficLight {
     /**

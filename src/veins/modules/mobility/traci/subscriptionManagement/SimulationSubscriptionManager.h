@@ -21,13 +21,28 @@
 #ifndef SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SIMULATIONSUBSCRIPTIONMANAGER_H_
 #define SRC_VEINS_MODULES_MOBILITY_TRACI_SUBSCRIPTIONMANAGEMENT_SIMULATIONSUBSCRIPTIONMANAGER_H_
 
-#include <veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h>
 #include <list>
 
+#include "veins/modules/mobility/traci/subscriptionManagement/SubscriptionManagerBase.h"
 
 namespace Veins {
 namespace TraCISubscriptionManagement {
 
+/**
+ * @class SimulationSubscriptionManager
+ *
+ * This checks some of the simulation variables and ensures that everything
+ * is right. For example: Checking if the simulation time is the expected value.
+ *
+ * It also offers the possibility to request parking and teleporting vehicles
+ * with the class methods.
+ *
+ * Updates are only possible with subscriptions via the update() method.
+ *
+ * IMPORTANT: Call initialize() before using!
+ *
+ * @author Nico Dassler <dassler@hm.edu>
+ */
 class SimulationSubscriptionManager: public SubscriptionManagerBase {
 public:
 

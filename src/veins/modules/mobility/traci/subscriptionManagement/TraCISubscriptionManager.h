@@ -38,8 +38,10 @@ namespace TraCISubscriptionManagement {
 /**
  * @class TraCISubscriptionManager
  *
- * This manages all the subscriptions that were made.
+ * This manages all the subscriptions that were made and provides an API
+ * to the underlying subscription managers and request their results.
  *
+ * @author Nico Dassler <dassler@hm.edu>
  */
 class TraCISubscriptionManager {
 

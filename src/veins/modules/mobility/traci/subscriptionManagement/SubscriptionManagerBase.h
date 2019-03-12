@@ -33,7 +33,18 @@
 namespace Veins {
 namespace TraCISubscriptionManagement {
 
+/**
+ * @class SubscriptionManagerBase
+ *
+ * This class provides some common functionality for a subscription manager. It stores
+ * TraCIConnection, TraCICommandInterface and a set containing subscribed ids.
+ *
+ * It also enforces you to provide an update() method in your subscription manager.
+ *
+ * @author Nico Daßler <dassler@hm.edu>
+ */
 class SubscriptionManagerBase {
+
 public:
     /**
      * Constructor.

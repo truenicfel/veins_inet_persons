@@ -18,10 +18,9 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include "veins/modules/mobility/traci/subscriptionManagement/VehicleSubscriptionManager.h"
-
 #include <algorithm>
 
+#include "veins/modules/mobility/traci/subscriptionManagement/VehicleSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
 namespace Veins {

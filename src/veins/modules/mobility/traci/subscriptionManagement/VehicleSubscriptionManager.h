@@ -32,6 +32,20 @@
 namespace Veins {
 namespace TraCISubscriptionManagement {
 
+/**
+ * @class VehicleSubscriptionManager
+ *
+ * Manages all vehicle subscriptions. You can update it via a subscription
+ * result in the form of a TraCIBuffer or via a manual update but it is
+ * necessary to provide an id_list of active vehicles then.
+ *
+ * After updating you can request the disappeared and appeared vehicles via
+ * the class methods.
+ *
+ * IMPORTANT: Call initialize() before using!
+ *
+ * @author Nico Dassler <dassler@hm.edu>
+ */
 class VehicleSubscriptionManager: public SubscriptionManagerBase {
 public:
     /**
