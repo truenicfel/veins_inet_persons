@@ -30,6 +30,7 @@ TraCISubscriptionManager::TraCISubscriptionManager(bool explicitUpdateIfIdListSu
     , mPersonSubscriptionManager()
     , mVehicleSubscriptionManager()
     , mSimulationSubscriptionManager()
+    , mTrafficLightSubscriptionManager()
 {
 }
 
@@ -65,7 +66,7 @@ void TraCISubscriptionManager::processSubscriptionResult(TraCIBuffer& buffer) {
         } else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_SIM_VARIABLE)
             mSimulationSubscriptionManager.update(buffer);
         else if (responseCommandID == TraCIConstants::RESPONSE_SUBSCRIBE_TL_VARIABLE)
-            throw cRuntimeError("traffic light subscription can't be handled yet!");
+            mTrafficLightSubscriptionManager.update(buffer);
         else {
             throw cRuntimeError("Received unknown subscription result!");
         }
@@ -124,6 +125,14 @@ std::list<std::string> TraCISubscriptionManager::getEndedParking() {
     return mSimulationSubscriptionManager.getEndedParking();
 }
 
+std::list<TraCITrafficLight> TraCISubscriptionManager::getTrafficLightUpdates() {
+    return mTrafficLightSubscriptionManager.getUpdated();
+}
+
+void TraCISubscriptionManager::subscribeToTrafficLight(std::string id) {
+    mTrafficLightSubscriptionManager.subscribeToTrafficLight(id);
+}
+
 void TraCISubscriptionManager::initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface) {
     mConnection = connection;
     mCommandInterface = commandInterface;
@@ -131,7 +140,10 @@ void TraCISubscriptionManager::initialize(std::shared_ptr<TraCIConnection> conne
     mPersonSubscriptionManager.initialize(connection, commandInterface);
     mVehicleSubscriptionManager.initialize(connection, commandInterface);
     mSimulationSubscriptionManager.initialize(connection, commandInterface);
+    mTrafficLightSubscriptionManager.initialize(connection, commandInterface);
 }
+
+
 
 } // end namespace Veins
 

@@ -42,6 +42,7 @@
 #include "veins/modules/mobility/traci/TraCISubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIVehicle.h"
 #include "veins/modules/mobility/traci/TraCIPerson.h"
+#include "veins/modules/mobility/traci/TraCITrafficLight.h"
 
 namespace Veins {
 
@@ -134,9 +135,6 @@ protected:
     std::map<std::string, cModule*> hosts; /**< vector of all hosts managed by us */
     std::set<std::string> unEquippedHosts;
     std::map<std::string, cModule*> trafficLights; /**< vector of all traffic lights managed by us */
-    uint32_t activeVehicleCount; /**< number of vehicles, be it parking or driving **/
-    uint32_t parkingVehicleCount; /**< number of parking vehicles, derived from parking start/end events */
-    uint32_t drivingVehicleCount; /**< number of driving, as reported by sumo */
     bool autoShutdownTriggered;
     cMessage* connectAndStartTrigger; /**< self-message scheduled for when to connect to TraCI server and start running */
     cMessage* executeOneTimestepTrigger; /**< self-message scheduled for when to next call executeOneTimestep */
@@ -161,20 +159,6 @@ protected:
     void deleteManagedModule(std::string nodeId);
 
     bool isModuleUnequipped(std::string nodeId); /**< returns true if this vehicle is Unequipped */
-
-    void processSubcriptionResult(TraCIBuffer& buf);
-
-    /*
-     * Simulation subscription handling:
-     */
-    void processSimSubscription(std::string objectId, TraCIBuffer& buf);
-
-    /*
-     * Traffic light subscription handling:
-     */
-    void subscribeToTrafficLightVariables(std::string tlId);
-    void unsubscribeFromTrafficLightVariables(std::string tlId);
-    void processTrafficLightSubscription(std::string objectId, TraCIBuffer& buf);
 
     /**
      * parses the vector of module types in ini file
@@ -203,6 +187,12 @@ protected:
      * @param updatedPersons the list of persons.
      */
     void processUpdatedPersons(std::list<TraCIPerson>& updatedPersons);
+
+    /**
+     * Helper method that takes a list of updated traffic lights and updates
+     * the state of the traffic light modules.
+     */
+    void processUpdatedTrafficLights(std::list<TraCITrafficLight>& updatedTrafficLights);
 
 };
 

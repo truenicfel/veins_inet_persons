@@ -27,8 +27,10 @@
 #include "veins/modules/mobility/traci/VehicleSubscriptionManager.h"
 #include "veins/modules/mobility/traci/PersonSubscriptionManager.h"
 #include "veins/modules/mobility/traci/SimulationSubscriptionManager.h"
+#include "veins/modules/mobility/traci/TrafficLightSubscriptionManager.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "veins/modules/mobility/traci/TraCITrafficLight.h"
 
 namespace Veins {
 
@@ -144,6 +146,25 @@ public:
     std::list<std::string> getEndedParking();
 
     /**
+     * Gives a list of traffic light subscription updates since the last
+     * time this method was called.
+     *
+     * @return std::list<TraCITrafficLight> list of traffic light updates.
+     */
+    std::list<TraCITrafficLight> getTrafficLightUpdates();
+
+    /**
+     * Subscribes to the following variables of a traffic light:
+     *      - current phase (0x28)
+     *      - current program (0x29)
+     *      - next switch (0x2d)
+     *      - red yellow green state (0x20)
+     *
+     * @param id of the traffic light to subscribe to.
+     */
+    void subscribeToTrafficLight(std::string id);
+
+    /**
      * Initialize this manager with the given parameters to access the traci server.
      */
     void initialize(std::shared_ptr<TraCIConnection> connection, std::shared_ptr<TraCICommandInterface> commandInterface);
@@ -180,6 +201,11 @@ private:
      * Stores the simulation subscription manager.
      */
     SimulationSubscriptionManager mSimulationSubscriptionManager;
+
+    /**
+     * Stores the traffic light subscription manager.
+     */
+    TrafficLightSubscriptionManager mTrafficLightSubscriptionManager;
 
 };
 

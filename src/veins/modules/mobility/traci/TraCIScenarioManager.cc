@@ -263,9 +263,6 @@ void TraCIScenarioManager::initialize(int stage)
     nextNodeVectorIndex = 0;
     hosts.clear();
     trafficLights.clear();
-    activeVehicleCount = 0;
-    parkingVehicleCount = 0;
-    drivingVehicleCount = 0;
     autoShutdownTriggered = false;
 
     world = FindModule<BaseWorldUtility*>::findGlobalModule();
@@ -341,7 +338,7 @@ void TraCIScenarioManager::init_traci()
 
             module->callInitialize();
             trafficLights[tlId] = module;
-            subscribeToTrafficLightVariables(tlId); // subscribe after module is in trafficLights
+            subscriptionManager.subscribeToTrafficLight(tlId); // subscribe after module is in trafficLights
             cnt++;
         }
     }
@@ -610,247 +607,15 @@ void TraCIScenarioManager::executeOneTimestep()
             }
         }
 
+        // last traffic lights
+
+
 
     }
 
     emit(traciTimestepEndSignal, targetTime);
 
     if (!autoShutdownTriggered) scheduleAt(simTime() + updateInterval, executeOneTimestepTrigger);
-}
-
-
-void TraCIScenarioManager::subscribeToTrafficLightVariables(std::string tlId)
-{
-    // subscribe to some attributes of the traffic light system
-    simtime_t beginTime = 0;
-    simtime_t endTime = SimTime::getMaxTime();
-    std::string objectId = tlId;
-    uint8_t variableNumber = 4;
-    uint8_t variable1 = TL_CURRENT_PHASE;
-    uint8_t variable2 = TL_CURRENT_PROGRAM;
-    uint8_t variable3 = TL_NEXT_SWITCH;
-    uint8_t variable4 = TL_RED_YELLOW_GREEN_STATE;
-
-    TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_TL_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber << variable1 << variable2 << variable3 << variable4);
-    processSubcriptionResult(buf);
-    ASSERT(buf.eof());
-}
-
-void TraCIScenarioManager::unsubscribeFromTrafficLightVariables(std::string tlId)
-{
-    // unsubscribe from some attributes of the traffic light system
-    // this method is mainly for completeness as traffic lights are not supposed to be removed at runtime
-
-    simtime_t beginTime = 0;
-    simtime_t endTime = SimTime::getMaxTime();
-    std::string objectId = tlId;
-    uint8_t variableNumber = 0;
-
-    TraCIBuffer buf = connection->query(CMD_SUBSCRIBE_TL_VARIABLE, TraCIBuffer() << beginTime << endTime << objectId << variableNumber);
-    ASSERT(buf.eof());
-}
-
-void TraCIScenarioManager::processTrafficLightSubscription(std::string objectId, TraCIBuffer& buf)
-{
-    cModule* tlIfSubmodule = trafficLights[objectId]->getSubmodule("tlInterface");
-    TraCITrafficLightInterface* tlIfModule = dynamic_cast<TraCITrafficLightInterface*>(tlIfSubmodule);
-    if (!tlIfModule) {
-        error("Could not find traffic light module %s", objectId.c_str());
-    }
-
-    uint8_t variableNumber_resp;
-    buf >> variableNumber_resp;
-    for (uint8_t j = 0; j < variableNumber_resp; ++j) {
-        uint8_t response_type;
-        buf >> response_type;
-        uint8_t isokay;
-        buf >> isokay;
-        if (isokay != RTYPE_OK) {
-            std::string description = buf.readTypeChecked<std::string>(TYPE_STRING);
-            if (isokay == RTYPE_NOTIMPLEMENTED) {
-                error("TraCI server reported subscribing to 0x%2x not implemented (\"%s\"). Might need newer version.", response_type, description.c_str());
-            }
-            else {
-                error("TraCI server reported error subscribing to variable 0x%2x (\"%s\").", response_type, description.c_str());
-            }
-        }
-        switch (response_type) {
-        case TL_CURRENT_PHASE:
-            tlIfModule->setCurrentPhaseByNr(buf.readTypeChecked<int32_t>(TYPE_INTEGER), false);
-            break;
-
-        case TL_CURRENT_PROGRAM:
-            tlIfModule->setCurrentLogicById(buf.readTypeChecked<std::string>(TYPE_STRING), false);
-            break;
-
-        case TL_NEXT_SWITCH:
-            tlIfModule->setNextSwitch(buf.readTypeChecked<simtime_t>(getCommandInterface()->getTimeType()), false);
-            break;
-
-        case TL_RED_YELLOW_GREEN_STATE:
-            tlIfModule->setCurrentState(buf.readTypeChecked<std::string>(TYPE_STRING), false);
-            break;
-
-        default:
-            error("Received unhandled traffic light subscription result; type: 0x%02x", response_type);
-            break;
-        }
-    }
-}
-
-void TraCIScenarioManager::processSimSubscription(std::string objectId, TraCIBuffer& buf)
-{
-    uint8_t variableNumber_resp;
-    buf >> variableNumber_resp;
-    for (uint8_t j = 0; j < variableNumber_resp; ++j) {
-        uint8_t variable1_resp;
-        buf >> variable1_resp;
-        uint8_t isokay;
-        buf >> isokay;
-        if (isokay != RTYPE_OK) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRING);
-            std::string description;
-            buf >> description;
-            if (isokay == RTYPE_NOTIMPLEMENTED) error("TraCI server reported subscribing to variable 0x%2x not implemented (\"%s\"). Might need newer version.", variable1_resp, description.c_str());
-            error("TraCI server reported error subscribing to variable 0x%2x (\"%s\").", variable1_resp, description.c_str());
-        }
-
-        if (variable1_resp == VAR_DEPARTED_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " departed vehicles." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-                // adding modules is handled on the fly when entering/leaving the ROI
-            }
-
-            activeVehicleCount += count;
-            drivingVehicleCount += count;
-        }
-        else if (variable1_resp == VAR_ARRIVED_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " arrived vehicles." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-
-                // check if this object has been deleted already (e.g. because it was outside the ROI)
-                cModule* mod = getManagedModule(idstring);
-                if (mod) deleteManagedModule(idstring);
-
-                if (unEquippedHosts.find(idstring) != unEquippedHosts.end()) {
-                    unEquippedHosts.erase(idstring);
-                }
-            }
-
-            if ((count > 0) && (count >= activeVehicleCount) && autoShutdown) autoShutdownTriggered = true;
-            activeVehicleCount -= count;
-            drivingVehicleCount -= count;
-        }
-        else if (variable1_resp == VAR_TELEPORT_STARTING_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " vehicles starting to teleport." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-
-                // check if this object has been deleted already (e.g. because it was outside the ROI)
-                cModule* mod = getManagedModule(idstring);
-                if (mod) deleteManagedModule(idstring);
-
-                if (unEquippedHosts.find(idstring) != unEquippedHosts.end()) {
-                    unEquippedHosts.erase(idstring);
-                }
-            }
-
-            activeVehicleCount -= count;
-            drivingVehicleCount -= count;
-        }
-        else if (variable1_resp == VAR_TELEPORT_ENDING_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " vehicles ending teleport." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-                // adding modules is handled on the fly when entering/leaving the ROI
-            }
-
-            activeVehicleCount += count;
-            drivingVehicleCount += count;
-        }
-        else if (variable1_resp == VAR_PARKING_STARTING_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " vehicles starting to park." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-
-                cModule* mod = getManagedModule(idstring);
-                auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
-                for (auto mm : mobilityModules) {
-                    mm->changeParkingState(true);
-                }
-            }
-
-            parkingVehicleCount += count;
-            drivingVehicleCount -= count;
-        }
-        else if (variable1_resp == VAR_PARKING_ENDING_VEHICLES_IDS) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == TYPE_STRINGLIST);
-            uint32_t count;
-            buf >> count;
-            EV_DEBUG << "TraCI reports " << count << " vehicles ending to park." << endl;
-            for (uint32_t i = 0; i < count; ++i) {
-                std::string idstring;
-                buf >> idstring;
-
-                cModule* mod = getManagedModule(idstring);
-                auto mobilityModules = getSubmodulesOfType<TraCIMobility>(mod);
-                for (auto mm : mobilityModules) {
-                    mm->changeParkingState(false);
-                }
-            }
-            parkingVehicleCount -= count;
-            drivingVehicleCount += count;
-        }
-        else if (variable1_resp == getCommandInterface()->getTimeStepCmd()) {
-            uint8_t varType;
-            buf >> varType;
-            ASSERT(varType == getCommandInterface()->getTimeType());
-            simtime_t serverTimestep;
-            buf >> serverTimestep;
-            EV_DEBUG << "TraCI reports current time step as " << serverTimestep << "ms." << endl;
-            simtime_t omnetTimestep = simTime();
-            ASSERT(omnetTimestep == serverTimestep);
-        }
-        else {
-            error("Received unhandled sim subscription result");
-        }
-    }
 }
 
 void TraCIScenarioManager::processUpdatedVehicles(std::list<TraCIVehicle>& updatedVehicles)
@@ -1035,6 +800,18 @@ void TraCIScenarioManager::processUpdatedPersons(std::list<TraCIPerson>& updated
 
 }
 
-void TraCIScenarioManager::processSubcriptionResult(TraCIBuffer& buf) {
-    error("Not supported");
+void TraCIScenarioManager::processUpdatedTrafficLights(std::list<TraCITrafficLight>& updatedTrafficLights) {
+    for (TraCITrafficLight trafficLight: updatedTrafficLights) {
+
+        // first get the module
+        cModule* tlIfSubmodule = trafficLights[trafficLight.id]->getSubmodule("tlInterface");
+        TraCITrafficLightInterface* tlIfModule = dynamic_cast<TraCITrafficLightInterface*>(tlIfSubmodule);
+        if (!tlIfModule) {
+            error("Could not find traffic light module %s", trafficLight.id.c_str());
+        }
+        tlIfModule->setCurrentPhaseByNr(trafficLight.currentPhase, false);
+        tlIfModule->setCurrentLogicById(trafficLight.currentProgram, false);
+        tlIfModule->setNextSwitch(trafficLight.nextSwitch, false);
+        tlIfModule->setCurrentState(trafficLight.redYellowGreenState, false);
+    }
 }
